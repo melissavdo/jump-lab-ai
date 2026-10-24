@@ -48,7 +48,7 @@ markSelections();sync();resetGame();tick()})();
   const decoder=new TextDecoder();
   function triggerJump(){
     const now=performance.now();
-    if(now-lastJump<120)return;
+    if(now-lastJump<300)return;
     lastJump=now;
     // Existing game's jump button invokes the same jump() function as Space.
     document.getElementById('jump').click();
