@@ -46,33 +46,61 @@ markSelections();sync();resetGame();tick()})();
   const connect=document.getElementById('connectMicrobit');
   let device=null, characteristic=null, buffer='',lastJump=0,previousMagnitude=null,lastPacket=0;
   const decoder=new TextDecoder();
+  // Classroom controls: button-only is the safest diagnostic mode.
+  let motionEnabled = false;
+  let motionArmed = true;
+  let motionLockUntil = 0;
+  let stableSince = 0;
+  let lastButtonJump = 0;
+  const axes={x:NaN,y:NaN,z:NaN};
+  const motionToggle=document.createElement('label');
+  motionToggle.style.cssText='display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px';
+  motionToggle.innerHTML='<input id="motionJumpToggle" type="checkbox"> Enable movement jumps';
+  panel.appendChild(motionToggle);
+  document.getElementById('motionJumpToggle').addEventListener('change',e=>{
+    motionEnabled=e.target.checked;
+    motionArmed=true; stableSince=0; previousMagnitude=null;
+    status.textContent=motionEnabled?'Movement jumps ON — press A also works.':'Button A only — movement jumps OFF.';
+  });
   function triggerJump(){
-    const now=performance.now();
-    if(now-lastJump<400)return;
-    lastJump=now;
-    // Existing game's jump button invokes the same jump() function as Space.
+    // The game itself only jumps when the character is on the ground.
     document.getElementById('jump').click();
   }
   function parse(line){
     const msg=line.trim();
     if(!msg)return;
-    if(/^(btn:A|button:A|jump)$/i.test(msg)){triggerJump();return;}
+    const now=performance.now();
+    if(/^(btn:A|button:A|jump)$/i.test(msg)){
+      if(now-lastButtonJump>220){lastButtonJump=now;triggerJump();}
+      return;
+    }
     const match=msg.match(/^(?:a\.)?(x|y|z)\s*:\s*(-?\d+(?:\.\d+)?)$/i);
     if(!match)return;
-    // Firmware sends x,y,z in a burst. Evaluate one sample at z.
     const axis=match[1].toLowerCase(),value=Number(match[2]);
     if(!Number.isFinite(value))return;
     axes[axis]=value;
-    if(axis==='z' && ['x','y','z'].every(k=>Number.isFinite(axes[k]))){
-      const magnitude=Math.hypot(axes.x,axes.y,axes.z);
-      const now=performance.now();
-      // Acceleration impulse; tunable threshold for physical jump.
-      if(previousMagnitude!==null && now-lastPacket<350 && Math.abs(magnitude-previousMagnitude)>450){triggerJump();}
-      previousMagnitude=magnitude;
-      lastPacket=now;
+    if(axis!=='z'||!['x','y','z'].every(k=>Number.isFinite(axes[k])))return;
+    const magnitude=Math.hypot(axes.x,axes.y,axes.z);
+    if(!motionEnabled){previousMagnitude=magnitude;lastPacket=now;return;}
+    if(previousMagnitude!==null && now-lastPacket<350){
+      const delta=Math.abs(magnitude-previousMagnitude);
+      // A single movement event is permitted, then the sensor must settle.
+      if(motionArmed && now>=motionLockUntil && delta>600){
+        triggerJump();
+        motionArmed=false;
+        motionLockUntil=now+850;
+        stableSince=0;
+      }else if(!motionArmed && now>=motionLockUntil){
+        // Re-arm only after 400 ms of relatively steady readings.
+        if(delta<100){
+          if(!stableSince)stableSince=now;
+          if(now-stableSince>=400){motionArmed=true;stableSince=0;}
+        }else stableSince=0;
+      }
     }
+    previousMagnitude=magnitude;
+    lastPacket=now;
   }
-  const axes={x:NaN,y:NaN,z:NaN};
   function receive(e){
     buffer+=decoder.decode(e.target.value);
     if(buffer.length>4000)buffer=buffer.slice(-1000);
@@ -80,7 +108,7 @@ markSelections();sync();resetGame();tick()})();
     buffer=lines.pop()||'';
     for(const line of lines)parse(line);
   }
-  function disconnected(){status.textContent='Disconnected — Spacebar still works.';characteristic=null;previousMagnitude=null;}
+  function disconnected(){status.textContent='Disconnected — Spacebar still works.';characteristic=null;previousMagnitude=null;motionArmed=true;stableSince=0;}
   connect.onclick=async()=>{
     if(!navigator.bluetooth){status.textContent='Use Chrome or Edge over HTTPS for Bluetooth.';return;}
     try{
