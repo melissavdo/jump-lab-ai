@@ -36,7 +36,7 @@ markSelections();sync();resetGame();tick()})();
 (() => {
   'use strict';
   const SERVICE='6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-  const TX='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+  const TX='6e400002-b5a3-f393-e0a9-e50e24dcca9e';
   const panel=document.createElement('div');
   panel.id='microbitControls';
   panel.innerHTML='<button type="button" id="connectMicrobit">📶 Connect micro:bit</button><button type="button" id="disconnectMicrobit" class="secondary">Disconnect</button><span id="microbitConnectionStatus" role="status">Not connected — Spacebar still works.</span>';
@@ -48,7 +48,7 @@ markSelections();sync();resetGame();tick()})();
   const decoder=new TextDecoder();
   function triggerJump(){
     const now=performance.now();
-    if(now-lastJump<500)return;
+    if(now-lastJump<120)return;
     lastJump=now;
     // Existing game's jump button invokes the same jump() function as Space.
     document.getElementById('jump').click();
