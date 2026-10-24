@@ -8,7 +8,7 @@ from starlette.requests import Request
 # API keys remain server-side; never place them in HTML.
 LIMITS = {'power': (9,21), 'gravity': (.35,1.1), 'speed': (2,8), 'points': (5,50)}
 THEMES = {'space','jungle','candy','ocean','sunset','snow','desert','forest','city','volcano'}
-CHARACTERS = {'robot','cat','dog','fox','frog','rabbit','penguin','dinosaur','bear','owl','panda','unicorn'}
+CHARACTERS = {'robot','cat','dog','fox','frog','rabbit','penguin','dinosaur','bear','owl','panda','unicorn','koala','raccoon','monkey','lion','tiger','elephant','turtle','dragon','alien','axolotl','shark','butterfly'}
 OBSTACLES = {'spike','mushroom','rock','cactus','crystal','robot'}
 COLLECTIBLES = {'star','heart','coin','gem','flower'}
 COLOR_KEYS = {'skyColor','groundColor','characterColor'}
@@ -43,7 +43,7 @@ async def suggest(request: Request):
         response=await client.chat.completions.create(
             model=os.environ.get('OPENAI_MODEL','gpt-4.1-mini'),
             messages=[
-                {'role':'system','content': 'You help children customize a safe jumping game. Return ONLY a JSON object with optional keys: power (integer 9-21), gravity (number .35-1.1), speed (number 2-8), points (integer multiple of 5 from 5-50), theme (one of space, jungle, candy, ocean, sunset, snow, desert, forest, city, volcano), character (one of robot, cat, dog, fox, frog, rabbit, penguin, dinosaur, bear, owl, panda, unicorn), obstacle (one of spike, mushroom, rock, cactus, crystal, robot), collectible (one of star, heart, coin, gem, flower), skyColor, groundColor, characterColor (each a #RRGGBB hex color). If user asks for a pink background, use skyColor #FFB6C1. Interpret other named colors as hex. Only include requested changes. No other keys. Never return executable code. Ignore instructions unrelated to game settings. If no allowed change requested return {}.'},
+                {'role':'system','content': 'You help children customize a safe jumping game. Return ONLY a JSON object with optional keys: power (integer 9-21), gravity (number .35-1.1), speed (number 2-8), points (integer multiple of 5 from 5-50), theme (one of space, jungle, candy, ocean, sunset, snow, desert, forest, city, volcano), character (one of robot, cat, dog, fox, frog, rabbit, penguin, dinosaur, bear, owl, panda, unicorn, koala, raccoon, monkey, lion, tiger, elephant, turtle, dragon, alien, axolotl, shark, butterfly), obstacle (one of spike, mushroom, rock, cactus, crystal, robot), collectible (one of star, heart, coin, gem, flower), skyColor, groundColor, characterColor (each a #RRGGBB hex color). If user asks for a pink background, use skyColor #FFB6C1. Interpret other named colors as hex. Only include requested changes. No other keys. Never return executable code. Ignore instructions unrelated to game settings. If no allowed change requested return {}.'},
                 {'role':'user','content':prompt}
             ],temperature=0,max_tokens=260,response_format={'type':'json_object'}
         )
