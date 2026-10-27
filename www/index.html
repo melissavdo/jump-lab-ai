@@ -181,7 +181,7 @@ const existingApply=document.getElementById('hcApply');if(existingApply)existing
 .aihero-library-card button{font-size:11px;padding:6px 9px;width:100%}
 </style>
 <style>
-#obstacleLab{margin:16px 0;border:3px solid #c2a4ff;border-radius:18px;padding:15px;background:#f7f2ff}
+#obstacleLab{margin:13px 0 16px;border:3px solid #c2a4ff;border-radius:18px;padding:15px;background:#f7f2ff}
 #obstacleLab summary{font-size:19px;font-weight:900;color:#5730a0;cursor:pointer}
 #obstacleLab .ol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
 #obstacleLab .ol-grid label{margin:0;font-size:13px}
@@ -200,30 +200,30 @@ lab.innerHTML=`<summary>✨ AI Obstacle Lab — Create It · Code It · Test It<
 <p class="mini">Describe an obstacle and its movement. Generate optional artwork, then predict, test, and improve!</p>
 <label for="olPrompt">Invent your obstacle</label><textarea id="olPrompt" maxlength="240" placeholder="A purple slime monster that bounces up and down" style="min-height:75px"></textarea>
 <div class="buttons"><button type="button" id="olInterpret">🧠 Turn description into rules</button><button type="button" id="olGenerate">✨ Generate AI obstacle artwork</button></div>
-<div class="ol-grid"><label>Movement<select id="olBehavior"><option value="stationary">🪨 Stationary</option><option value="bounce">↕️ Bounce</option><option value="float">☁️ Float</option><option value="zigzag">〰️ Zigzag</option><option value="chase">🎯 Chase (limited)</option></select></label><label>Size<select id="olSize"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></label><label>Movement speed <span id="olSpeedValue">1.0×</span><input id="olSpeed" type="range" min="0.5" max="2" step="0.25" value="1"></label></div>
+<div class="ol-grid"><label>Movement<select id="olBehavior"><option value="stationary">🪨 Stationary</option><option value="bounce">↕️ Bounce</option><option value="float">☁️ Float</option><option value="zigzag">〰️ Zigzag</option><option value="chase">Follow the Player 🎯</option></select></label><label>Size<select id="olSize"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></label><label>Movement speed <span id="olSpeedValue">1.0×</span><input id="olSpeed" type="range" min="0.5" max="2" step="0.25" value="1"></label></div>
 <div class="ol-preview"><img id="olImage" alt="AI obstacle preview" hidden><div><button type="button" id="olUseImage" disabled>✓ Approve artwork</button> <button type="button" class="secondary" id="olDownload" disabled>⬇ PNG</button><p class="mini">Artwork is optional. Rules work without an AI image.</p></div></div>
 <div class="buttons"><button type="button" id="olApply">▶ Apply obstacle & test</button><button type="button" class="secondary" id="olReset">↺ Use classic obstacles</button></div>
 <p class="status" id="olStatus" role="status">Ready to invent! Choose rules or describe an obstacle.</p>
 <label for="olPrediction">🔬 Predict: Will your obstacle make the game easier or harder? Why?</label><textarea id="olPrediction" rows="2" style="min-height:55px" placeholder="I predict… because…"></textarea>
-<details><summary style="font-size:14px">💻 See the Code Behind Your Obstacle</summary><pre id="olCode"></pre><p class="mini">The game uses tested movement rules. AI cannot run arbitrary JavaScript.</p></details>
+<p class="mini">💻 Explore the code for your obstacle in <strong>See the Code Behind Your Game</strong>.</p>
 <h3 style="font-size:15px;color:#5730a0">🎒 My AI Obstacles</h3><div id="olLibrary" class="ol-library"></div><p class="mini">Saved in this browser when storage permits; approved artwork can be downloaded and shared.</p>`;
-const anchor=host.querySelector('#codeExplorer');if(anchor)host.insertBefore(lab,anchor);else host.append(lab);
+const heroGallery=document.getElementById('heroGallery');if(heroGallery)heroGallery.parentElement.insertBefore(lab,heroGallery);else host.append(lab);
 const $=id=>lab.querySelector('#'+id);let pending=null,approved=null;
 const storeKey='jumpLabObstaclesV1';let saved=[];try{saved=JSON.parse(localStorage.getItem(storeKey)||'[]');if(!Array.isArray(saved))saved=[]}catch(e){}
 function values(){return {behavior:$('olBehavior').value,size:$('olSize').value,motion:Number($('olSpeed').value)}}
-function code(){const v=values();$('olSpeedValue').textContent=v.motion.toFixed(2)+'×';$('olCode').textContent=`// Jump Lab: safe, predefined obstacle behavior\nconst obstacle = {\n  behavior: "${v.behavior}",\n  size: "${v.size}",\n  movementSpeed: ${v.motion}\n};\n\n// Each frame, the game calculates the obstacle's position.\n// Bounce: y = baseY - abs(sin(time)) * height\n// Float: y = baseY - 43 + sin(time) * 22\n// Zigzag: y = baseY - 20 + sin(time * 1.4) * 20\n// Chase: move toward player, limited to 0.65 px/frame\n// Collision uses a consistent box inside the sprite.`}
-for(const id of ['olBehavior','olSize','olSpeed'])$(id).addEventListener('input',code);
-function interpret(t){t=t.toLowerCase();$('olBehavior').value=/chase|follow|track/.test(t)?'chase':/zigzag|zig zag|side.to.side/.test(t)?'zigzag':/float|hover|fly/.test(t)?'float':/bounce|jump|hop/.test(t)?'bounce':'stationary';$('olSize').value=/large|huge|giant|big/.test(t)?'large':/small|tiny|little/.test(t)?'small':'medium';$('olSpeed').value=/slow|gentle/.test(t)?'.5':/fast|quick|rapid/.test(t)?'1.75':'1';code();$('olStatus').textContent='Movement rules interpreted. Review and apply them to test.'}
+function code(){const v=values();$('olSpeedValue').textContent=v.motion.toFixed(2)+'×';/* code now lives in the unified explorer */ const unusedCode=`// Jump Lab: safe, predefined obstacle behavior\nconst obstacle = {\n  behavior: "${v.behavior}",\n  size: "${v.size}",\n  movementSpeed: ${v.motion}\n};\n\n// Each frame, the game calculates the obstacle's position.\n// Bounce: y = baseY - abs(sin(time)) * height\n// Float: y = baseY - 43 + sin(time) * 22\n// Zigzag: y = baseY - 20 + sin(time * 1.4) * 20\n// Chase: move toward player, limited to 0.65 px/frame\n// Collision uses a consistent box inside the sprite.`;window.dispatchEvent(new CustomEvent('jumpLabObstacleChanged',{detail:{field:window.jumpLabObstacleChangedField||'obstacleBehavior'}}));}
+for(const id of ['olBehavior','olSize','olSpeed'])$(id).addEventListener('input',()=>{window.jumpLabObstacleChangedField={olBehavior:'obstacleBehavior',olSize:'obstacleSize',olSpeed:'obstacleMotion'}[id];code();});
+function interpret(t){t=t.toLowerCase();$('olBehavior').value=/chase|follow|track/.test(t)?'chase':/zigzag|zig zag|side.to.side/.test(t)?'zigzag':/float|hover|fly/.test(t)?'float':/bounce|jump|hop/.test(t)?'bounce':'stationary';$('olSize').value=/large|huge|giant|big/.test(t)?'large':/small|tiny|little/.test(t)?'small':'medium';$('olSpeed').value=/slow|gentle/.test(t)?'.5':/fast|quick|rapid/.test(t)?'1.75':'1';window.jumpLabObstacleChangedField='obstacleBehavior';code();$('olStatus').textContent='Movement rules interpreted. Review and apply them to test.'}
 $('olInterpret').onclick=()=>interpret($('olPrompt').value);
-function apply(){window.jumpLabObstacle={...values(),image:approved};document.getElementById('start').click();$('olStatus').textContent='Obstacle applied! Test your prediction, then revise your design.'}
+function apply(){window.jumpLabObstacle={...values(),image:approved};window.jumpLabObstacleChangedField='obstacleBehavior';code();document.getElementById('start').click();$('olStatus').textContent='Obstacle applied! Test your prediction, then revise your design.'}
 $('olApply').onclick=apply;
-$('olReset').onclick=()=>{window.jumpLabObstacle=null;approved=null;document.getElementById('start').click();$('olStatus').textContent='Classic obstacles restored.'};
+$('olReset').onclick=()=>{window.jumpLabObstacle=null;approved=null;window.jumpLabObstacleChangedField='obstacleBehavior';code();document.getElementById('start').click();$('olStatus').textContent='Classic obstacles restored.'};
 function renderSaved(){const box=$('olLibrary');box.replaceChildren();if(!saved.length){box.textContent='No saved obstacles yet.';return}saved.forEach((h,i)=>{const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=h.title||'Obstacle '+(i+1);b.onclick=()=>{const im=new Image();im.onload=()=>{approved=im;window.jumpLabObstacle={...h.rules,image:im};$('olBehavior').value=h.rules.behavior;$('olSize').value=h.rules.size;$('olSpeed').value=h.rules.motion;code();apply()};im.onerror=()=>{$('olStatus').textContent='Saved image could not be loaded.'};im.src=h.image};box.append(b)})}
 function saveApproved(){if(!approved)return;const title=$('olPrompt').value.trim().slice(0,45)||'My obstacle';saved.unshift({title,image:approved.src,rules:values()});saved=saved.slice(0,5);try{localStorage.setItem(storeKey,JSON.stringify(saved))}catch(e){$('olStatus').textContent='Obstacle applied; browser storage is full, so it may not remain saved.'}renderSaved()}
 $('olGenerate').onclick=async()=>{const prompt=$('olPrompt').value.trim();if(prompt.length<5){$('olStatus').textContent='Describe an obstacle first.';return}interpret(prompt);const btn=$('olGenerate');btn.disabled=true;$('olStatus').textContent='Generating artwork… this may take a minute.';pending=null;try{const response=await fetch('/api/generate-hero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'A single original kid-friendly VIDEO GAME OBSTACLE sprite, NOT a hero: '+prompt+'. Centered isolated 2D platformer object, bold clean outline, transparent background, no text, no scenery, no shadow.'})});const data=await response.json();if(!response.ok)throw Error(data.error||'Generation failed');const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=data.image});pending=img;$('olImage').src=data.image;$('olImage').hidden=false;$('olUseImage').disabled=false;$('olDownload').disabled=false;$('olStatus').textContent='Artwork ready. Approve it to use it in your game.'}catch(e){$('olStatus').textContent='Artwork unavailable: '+e.message+'. You can still use movement rules.'}finally{btn.disabled=false}};
 $('olUseImage').onclick=()=>{if(!pending)return;approved=pending;saveApproved();$('olStatus').textContent='Artwork approved and saved. Press Apply obstacle & test.'};
 $('olDownload').onclick=()=>{if(!pending)return;const a=document.createElement('a');a.href=pending.src;a.download='jump-lab-obstacle.png';document.body.append(a);a.click();a.remove()};
-renderSaved();code();
+renderSaved();window.jumpLabObstacleChangedField=null;code();
 })();
 </script>
 <style>
@@ -308,6 +308,7 @@ document.getElementById('disconnectMicrobit').onclick=()=>{if(device?.gatt?.conn
 #codeExplorer .ce-changed{display:block;background:#ffe7a4;color:#3c2858;border-left:4px solid #f49a20;padding:1px 8px;margin:0 -8px;border-radius:4px;font-weight:850}#codeExplorer .ce-change-note{font-size:12px;font-weight:800;color:#825100;margin:7px 0}#codeExplorer pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#18233c;color:#eaf5ff;border-radius:12px;padding:14px;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:400px;overflow:auto}
 #codeExplorer .ce-explain{background:#e8f2ff;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55}
 #codeExplorer .ce-values{font-size:13px;font-weight:800;margin:10px 0}
+#codeExplorer .ce-views{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}#codeExplorer .ce-views button{font-size:12px;padding:8px 10px}#codeExplorer .ce-views button[aria-pressed='true']{background:#6733c4;color:white;border-color:#51259e}
 </style>
 <script>
 (()=>{
@@ -318,24 +319,30 @@ const explorer=document.createElement('details');
 explorer.id='codeExplorer';
 explorer.innerHTML=`<summary>🔍 See the Code Behind Your Game</summary>
 <p class="mini">Change your game settings or apply AI suggestions, then see what the code means!</p>
-<div class="ce-values" id="ceValues"></div><div class="ce-change-note" id="ceChangeNote">Change one setting to highlight its code below.</div>
+<div class="ce-views"><button type="button" id="cePhysics" aria-pressed="true">🚀 Game Physics</button><button type="button" id="ceObstacle" aria-pressed="false">🎯 Obstacle Behavior</button><button type="button" id="ceAppearance" aria-pressed="false">🎨 Appearance</button></div><div class="ce-values" id="ceValues"></div><div class="ce-change-note" id="ceChangeNote">Change one setting to highlight its code below.</div>
 <div class="ce-actions"><button type="button" id="cePython" aria-pressed="true">🐍 Beginner Python</button><button type="button" id="ceJS" aria-pressed="false">💻 Real JavaScript</button><button type="button" id="ceCopy" class="secondary">📋 Copy code</button></div>
 <pre id="ceCode" aria-label="Code example"></pre>
 <div class="ce-explain" id="ceExplain"></div>
 <p class="mini">Python is a teaching example, not the code running this browser game. JavaScript shows excerpts from the actual game logic with your current values.</p>`;
 target.append(explorer);
 const $=id=>document.getElementById(id);
-let language='python';
+let language='python',view='physics';
 let lastChanged=null;
-const fieldNames={gravity:'Gravity',power:'Jump power',speed:'Game speed',difficulty:'Obstacle frequency',skyColor:'Sky color',groundColor:'Ground color',characterColor:'Hero Aura',collectible:'Collectible'};
+const fieldNames={gravity:'Gravity',power:'Jump power',speed:'Game speed',difficulty:'Obstacle frequency',skyColor:'Sky color',groundColor:'Ground color',characterColor:'Hero Aura',collectible:'Collectible',obstacleBehavior:'Obstacle movement',obstacleSize:'Obstacle size',obstacleMotion:'Obstacle movement speed',character:'Hero',obstacle:'Classic obstacle',theme:'World theme'};
 const intervals={none:0,few:210,medium:105,many:72,tons:48};
-const getValues=()=>({gravity:Number($('gravity').value),power:Number($('power').value),speed:Number($('speed').value),difficulty:$('difficulty').value,skyColor:$('skyColor').value,groundColor:$('groundColor').value,characterColor:$('characterColor').value,collectible:$('collectible').value});
+const getValues=()=>({gravity:Number($('gravity').value),power:Number($('power').value),speed:Number($('speed').value),difficulty:$('difficulty').value,skyColor:$('skyColor').value,groundColor:$('groundColor').value,characterColor:$('characterColor').value,collectible:$('collectible').value,character:$('character').value,obstacle:$('obstacle').value,theme:$('theme').value});
 function render(){
 const v=getValues(),interval=intervals[v.difficulty]??105;
 $('ceValues').textContent=`Gravity: ${v.gravity}  ·  Jump power: ${v.power}  ·  Speed: ${v.speed}  ·  Obstacles: ${v.difficulty==='tons'?'Lots':v.difficulty[0].toUpperCase()+v.difficulty.slice(1)}  ·  Sky: ${v.skyColor}  ·  Ground: ${v.groundColor}  ·  Hero glow: ${v.characterColor}  ·  Collectible: ${v.collectible}`;
 const python=`# PYTHON LEARNING EXAMPLE (not executed by the game)\ngravity = ${v.gravity}\njump_power = ${v.power}\ngame_speed = ${v.speed}\nobstacle_interval = ${interval}\nsky_color = "${v.skyColor}"\nground_color = "${v.groundColor}"\nhero_glow_color = "${v.characterColor}"\ncollectible = "${v.collectible}"\n\n# Draw the sky, ground, and a colored aura behind the hero.\n# Emoji and AI image pixels keep their original colors.\n\n# Each game frame:\nvertical_speed += gravity\nplayer_y += vertical_speed\n\n# When a jump is allowed:\nif player_is_on_ground and jump_requested:\n    vertical_speed = -jump_power\n\n# Create obstacles at regular intervals:\nif obstacle_interval > 0:\n    if frame % obstacle_interval == 0:\n        spawn_obstacle()\n\n# Move each obstacle to the left:\nfor obstacle in obstacles:\n    obstacle.x -= game_speed`;
 const js=`// REAL JAVASCRIPT LOGIC — excerpts from Jump Lab\n// Current settings (values displayed from the controls):\nsettings.gravity = ${v.gravity};\nsettings.power = ${v.power};\nsettings.speed = ${v.speed};\nsettings.difficulty = '${v.difficulty}';\nsettings.skyColor = '${v.skyColor}';\nsettings.groundColor = '${v.groundColor}';\nsettings.characterColor = '${v.characterColor}';\nsettings.collectible = '${v.collectible}';\n\n// From scene():\n// The sky uses settings.skyColor as the gradient start.\n// The ground is filled with settings.groundColor.\n// From drawHero():\n// A glowing ellipse behind the hero uses settings.characterColor.\n\n// From jump():\nif (!playing || over) return;\nif (player.y >= ground - player.h - 1) {\n  player.vy = -settings.power;\n}\n\n// From tick():\nplayer.vy += settings.gravity;\nplayer.y += player.vy;\nconst obstacleInterval = {\n  none: 0, few: 210, medium: 105, many: 72, tons: 48\n}[settings.difficulty] ?? 105;\nif (obstacleInterval > 0 && frame % obstacleInterval === 0) {\n  obstacles.push({x: W+25, w: 30, h: 32+Math.random()*19});\n}\nfor (const o of obstacles) {\n  o.x -= settings.speed;\n}`;
-const source=language==='python'?python:js;
+const ol=document.getElementById('obstacleLab');
+ const ov={behavior:ol?.querySelector('#olBehavior')?.value||'stationary',size:ol?.querySelector('#olSize')?.value||'medium',motion:Number(ol?.querySelector('#olSpeed')?.value||1)};
+ const obstaclePython=`# PYTHON LEARNING EXAMPLE (not executed by the game)\nobstacle_behavior = "${ov.behavior}"\nobstacle_size = "${ov.size}"\nobstacle_movement_speed = ${ov.motion}\n\n# Each frame, move obstacles left.\nfor obstacle in obstacles:\n    obstacle.x -= game_speed\n    if obstacle_behavior == "bounce":\n        obstacle.y = obstacle.base_y - abs(sin(time)) * 42\n    elif obstacle_behavior == "float":\n        obstacle.y = obstacle.base_y - 43 + sin(time) * 22\n    elif obstacle_behavior == "zigzag":\n        obstacle.y = obstacle.base_y - 20 + sin(time * 1.4) * 20\n    elif obstacle_behavior == "chase":\n        # Follow the Player, with a safe movement limit.\n        obstacle.y += clamp((player.y - obstacle.y) * 0.025, -0.65, 0.65)\n    # stationary keeps its original height\n    # Collision detection checks the obstacle's bounding box.`;
+ const obstacleJS=`// REAL JAVASCRIPT LOGIC — excerpts from Jump Lab\nconst obstacleBehavior = '${ov.behavior}';\nconst obstacleSize = '${ov.size}';\nconst obstacleMovementSpeed = ${ov.motion};\n\n// From tick():\nconst t = o.age * .045 * o.motion + o.phase;\nif (o.behavior === 'bounce') offset = -Math.abs(Math.sin(t)) * 42;\nif (o.behavior === 'float') offset = -43 + Math.sin(t) * 22;\nif (o.behavior === 'zigzag') offset = -20 + Math.sin(t * 1.4) * 20;\nif (o.behavior === 'chase') {\n  // Follow the Player — limited to 0.65 pixels per frame.\n  const target = Math.max(ground-110, Math.min(ground-o.h, player.y+player.h/2-o.h/2));\n  o.y += Math.max(-.65, Math.min(.65, (target-o.y)*.025));\n} else { o.y = o.baseY + offset; }\n// Collision uses a consistent bounding box.`;
+ const appearancePython=`# PYTHON LEARNING EXAMPLE (not executed by the game)\nhero = "${v.character}"\nworld = "${v.theme}"\nclassic_obstacle = "${v.obstacle}"\ncollectible = "${v.collectible}"\nsky_color = "${v.skyColor}"\nground_color = "${v.groundColor}"\nhero_glow_color = "${v.characterColor}"\n\n# Draw the world, hero, obstacle and collectible images.\ndraw_background(sky_color, ground_color)\ndraw_hero(hero, hero_glow_color)\ndraw_obstacles(classic_obstacle)\ndraw_collectibles(collectible)\n# Approved AI artwork replaces the default sprite image.`;
+ const appearanceJS=`// REAL JAVASCRIPT LOGIC — excerpts from Jump Lab\nsettings.character = '${v.character}';\nsettings.theme = '${v.theme}';\nsettings.obstacle = '${v.obstacle}';\nsettings.collectible = '${v.collectible}';\nsettings.skyColor = '${v.skyColor}';\nsettings.groundColor = '${v.groundColor}';\nsettings.characterColor = '${v.characterColor}';\n\n// From drawHero():\n// The aura uses settings.characterColor.\n// An approved AI hero image is drawn when available.\n// From drawObstacle():\nif (o.art && o.art.complete && o.art.naturalWidth) {\n  ctx.drawImage(o.art, o.x, o.y, o.w, o.h);\n}\n// From drawCollectible():\nconst sprite = collectibleSprites[settings.collectible];\nif (sprite && sprite.complete && sprite.naturalWidth > 0) {\n  ctx.drawImage(sprite, x-17, y-17, 34, 34);\n}`;
+ const source=view==='obstacle'?(language==='python'?obstaclePython:obstacleJS):view==='appearance'?(language==='python'?appearancePython:appearanceJS):(language==='python'?python:js);
 const patterns={
   gravity:language==='python'?/^gravity = /:/^settings\.gravity = /,
   power:language==='python'?/^jump_power = /:/^settings\.power = /,
@@ -344,7 +351,13 @@ const patterns={
   skyColor:language==='python'?/^sky_color = /:/^settings\.skyColor = /,
   groundColor:language==='python'?/^ground_color = /:/^settings\.groundColor = /,
   characterColor:language==='python'?/^hero_glow_color = /:/^settings\.characterColor = /,
-  collectible:language==='python'?/^collectible = /:/^settings\.collectible = /
+  collectible:language==='python'?/^collectible = /:/^settings\.collectible = /,
+   obstacleBehavior:language==='python'?/^obstacle_behavior = /:/^const obstacleBehavior = /,
+   obstacleSize:language==='python'?/^obstacle_size = /:/^const obstacleSize = /,
+   obstacleMotion:language==='python'?/^obstacle_movement_speed = /:/^const obstacleMovementSpeed = /,
+   character:language==='python'?/^hero = /:/^settings\.character = /,
+   theme:language==='python'?/^world = /:/^settings\.theme = /,
+   obstacle:language==='python'?/^classic_obstacle = /:/^settings\.obstacle = /
 };
 const code=$('ceCode');code.replaceChildren();
 source.split('\n').forEach((line,index)=>{
@@ -353,12 +366,15 @@ source.split('\n').forEach((line,index)=>{
     const highlight=document.createElement('span');highlight.className='ce-changed';highlight.textContent=line;code.append(highlight);
   }else code.append(document.createTextNode(line));
 });
-$('ceChangeNote').textContent=lastChanged?'✨ Latest change: '+fieldNames[lastChanged]+' — highlighted below.':'Change one setting to highlight its code below.';
-$('ceExplain').textContent=interval===0?'🧠 A variable stores a value. Gravity pulls your hero down; jump power launches it upward. The obstacle condition is turned off because difficulty is None.':`🧠 Variables store game rules. An if statement makes a decision. The % operator checks whether a frame number is divisible by ${interval}; that controls when a new obstacle appears. Fewer frames between obstacles means more obstacles.`;
+$('ceValues').textContent=view==='obstacle'?`Movement: ${ov.behavior==='chase'?'Follow the Player 🎯':ov.behavior} · Size: ${ov.size} · Movement speed: ${ov.motion.toFixed(2)}×`:view==='appearance'?`Hero: ${v.character} · World: ${v.theme} · Classic obstacle: ${v.obstacle} · Collectible: ${v.collectible} · Hero Aura: ${v.characterColor}`:$('ceValues').textContent;
+ $('ceChangeNote').textContent=lastChanged?'✨ Latest change: '+fieldNames[lastChanged]+' — highlighted below.':'Change one setting to highlight its code below.';
+$('ceExplain').textContent=view==='obstacle'?'🧠 Obstacle behaviors are tested movement rules. Follow the Player responds to the hero’s position, but its vertical movement is limited for fairness.':view==='appearance'?'🎨 The game loads approved AI artwork as images. The game code still controls how images move, collide, and interact.':interval===0?'🧠 A variable stores a value. Gravity pulls your hero down; jump power launches it upward. The obstacle condition is turned off because difficulty is None.':`🧠 Variables store game rules. An if statement makes a decision. The % operator checks whether a frame number is divisible by ${interval}; that controls when a new obstacle appears. Fewer frames between obstacles means more obstacles.`;
 $('cePython').setAttribute('aria-pressed',String(language==='python'));
 $('ceJS').setAttribute('aria-pressed',String(language==='js'));
 }
-$('cePython').onclick=()=>{language='python';render()};
+for(const [id,name] of [['cePhysics','physics'],['ceObstacle','obstacle'],['ceAppearance','appearance']])$(id).onclick=()=>{view=name;for(const [other,otherName] of [['cePhysics','physics'],['ceObstacle','obstacle'],['ceAppearance','appearance']])$(other).setAttribute('aria-pressed',String(view===otherName));render()};
+ window.addEventListener('jumpLabObstacleChanged',e=>{if(e.detail?.field){lastChanged=e.detail.field;view='obstacle';for(const [id,name] of [['cePhysics','physics'],['ceObstacle','obstacle'],['ceAppearance','appearance']])$(id).setAttribute('aria-pressed',String(view===name));}render()});
+ $('cePython').onclick=()=>{language='python';render()};
 $('ceJS').onclick=()=>{language='js';render()};
 $('ceCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('ceCode').textContent);$('ceCopy').textContent='✓ Copied';setTimeout(()=>$('ceCopy').textContent='📋 Copy code',1300)}catch(e){$('ceCopy').textContent='Select code to copy'}};
 // Capture both slider input and AI apply changes; never modify existing listeners.
@@ -367,7 +383,7 @@ const tracked=Object.keys(fieldNames);
 function detectChange(){
  const current=getValues();
  const changed=tracked.filter(k=>current[k]!==previous[k]);
- if(changed.length)lastChanged=changed[changed.length-1];
+ if(changed.length){lastChanged=changed[changed.length-1];view=['character','theme','obstacle','collectible','skyColor','groundColor','characterColor'].includes(lastChanged)?'appearance':'physics';for(const [id,name] of [['cePhysics','physics'],['ceObstacle','obstacle'],['ceAppearance','appearance']])$(id).setAttribute('aria-pressed',String(view===name));}
  previous=current;
  render();
 }
