@@ -63,6 +63,65 @@ async def suggest(request: Request):
     except Exception:
         return JSONResponse({'error':'AI request failed. Try again or use offline practice.'},status_code=502)
 
+
+# Classroom image generation: moderated, limited, and server-side only.
+image_visits = defaultdict(deque)
+
+async def generate_hero(request: Request):
+    if request.method != 'POST':
+        return JSONResponse({'error': 'POST required'}, status_code=405)
+    if int(request.headers.get('content-length', '0') or '0') > 2000:
+        return JSONResponse({'error': 'Request too large.'}, status_code=413)
+    try:
+        data = await request.json()
+        description = data.get('prompt', '')
+        if not isinstance(description, str) or not (5 <= len(description.strip()) <= 240):
+            return JSONResponse({'error': 'Describe a hero in 5–240 characters.'}, status_code=400)
+        key = os.environ.get('OPENAI_API_KEY')
+        if not key:
+            return JSONResponse({'error': 'AI image generation is not configured.'}, status_code=503)
+        visitor = request.client.host if request.client else 'unknown'
+        now = time.monotonic()
+        history = image_visits[visitor]
+        while history and history[0] < now - 3600:
+            history.popleft()
+        if len(history) >= int(os.environ.get('HERO_IMAGES_PER_HOUR', '3')):
+            return JSONResponse({'error': 'This device has reached its image-generation limit. Try the character gallery.'}, status_code=429)
+        from openai import AsyncOpenAI
+        import base64
+        client = AsyncOpenAI(api_key=key, timeout=120, max_retries=0)
+        moderation = await client.moderations.create(model='omni-moderation-latest', input=description)
+        if moderation.results[0].flagged:
+            return JSONResponse({'error': 'Please describe a friendly, classroom-appropriate character.'}, status_code=400)
+        # Count attempted generations to bound classroom costs, even if the API fails.
+        history.append(now)
+        instruction = (
+            'Make ONE original, friendly, age-appropriate, full-body 2D cartoon video-game character sprite. '
+            'Subject requested by student: ' + description + '. '
+            'Character should clearly resemble the requested animal or creature, with recognizable anatomy. '
+            'Single centered character, head to feet, expressive face, bold clean outlines, vivid colors, '
+            'high detail, no cropping, no background, transparent alpha background, no floor, no shadow, '
+            'no text, no logos, no weapons, no blood, no violence, no adult themes. '
+            'Ensure limbs and accessories are part of a cohesive single illustration. '
+            'Use a playful, polished, kid-friendly 2D platform-game art style.'
+        )
+        result = await client.images.generate(
+            model=os.environ.get('OPENAI_IMAGE_MODEL', 'gpt-image-1'),
+            prompt=instruction,
+            size='1024x1024',
+            quality='low',
+            background='transparent',
+            output_format='png',
+            n=1,
+        )
+        raw = result.data[0].b64_json
+        if not raw:
+            return JSONResponse({'error': 'Image service returned no artwork.'}, status_code=502)
+        # No student prompt or generated image is stored on this server.
+        return JSONResponse({'image': 'data:image/png;base64,' + raw})
+    except Exception:
+        return JSONResponse({'error': 'Image generation failed. Try again or choose a gallery hero.'}, status_code=502)
+
 # Shiny for Python ASGI app, with a lightweight API route.
 from starlette.routing import Route
 from starlette.applications import Starlette
@@ -76,6 +135,7 @@ from shiny import ui, render, reactive
 shiny_app=App(ui.page_fluid(ui.h3('Jump Lab AI'),ui.p('Open the Jump Lab game at /game/')), lambda input,output,session: None)
 app=Starlette(routes=[Route('/',lambda request: RedirectResponse('/game/')),
     Route('/api/suggest',suggest,methods=['POST']),
+    Route('/api/generate-hero',generate_hero,methods=['POST']),
     Route('/game',lambda request: RedirectResponse('/game/'))])
 app.mount('/game',StaticFiles(directory=str(root/'www'),html=True),name='game')
 app.mount('/shiny',shiny_app)
