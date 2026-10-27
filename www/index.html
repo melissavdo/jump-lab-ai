@@ -5,7 +5,24 @@
 </style></head><body><div class="wrap"><header><div><h1>🌟 Jump Lab! <span style='font-size:.45em;letter-spacing:0;color:#fff;text-shadow:none'>Cartoon Edition</span></h1><div class="muted">IHMC Science Saturday · Body to Bytes · Grades 5–7</div></div><span class="tag">LIVE AI + OFFLINE PRACTICE</span></header><div class="layout"><section class="panel"><h2>🎮 Play your creation!</h2><div class="ribbon">🌈 Design it · ▶ Play it · 🧠 Test your ideas!</div><div class="gallery-label">🐾 Choose your hero <span>Pick a character, then press Start!</span></div><div class="sprite-gallery" id="heroGallery" aria-label="Character gallery"></div><canvas id="game" width="720" height="385" aria-label="Jumping game"></canvas><div class="world-gallery" id="worldGallery" aria-label="World gallery"></div><div class="buttons"><button id="start">▶ Start / Restart</button><button class="secondary" id="jump">↑ Jump</button><button class="secondary" id="reset">↺ Reset all settings</button></div><p class="instructions muted">Press <b>Space</b> or click Jump. Dodge obstacles and collect treasures. Change the rules on the right, then test your prediction!</p><div class="status" id="gameStatus">Ready to play.</div></section><section class="panel"><h2>✨ AI Game Designer</h2><div class="muted">Describe a change. Review the proposed settings before applying them.</div><label for="request">What would you like to change?</label><textarea id="request" placeholder="Make me a purple fox in a pink sunset with mushroom obstacles and hearts."></textarea><div class="buttons"><button id="suggest">Suggest changes</button><select id="mode" aria-label="Assistant mode" style="padding:10px;background:#30435e;color:white;border-radius:10px"><option value="live">Live AI</option><option value="offline">Offline practice</option></select><button id="example" class="secondary">Try an example</button></div><div class="proposal" id="proposal"><b>Proposed modifications</b><div class="mini" style="margin:7px 0">Choose which AI ideas to keep. Uncheck anything you do not want.</div><div class="buttons" style="margin:5px 0"><button type="button" class="secondary" id="selectAllChanges">Select all</button><button type="button" class="secondary" id="clearChanges">Clear selection</button></div><ul id="changes" style="list-style:none;padding-left:0"></ul><div class="buttons"><button id="apply">✓ Apply selected changes</button><button class="secondary" id="discard">Discard</button></div></div><div class="status" id="assistantStatus">Choose Live AI or Offline Practice.</div><hr style="border:0;border-top:1px solid #344862;margin:19px 0"><h2>🧩 Scratch-style design blocks</h2><div class="mini">Choose a character instantly, or describe your idea to AI.</div><div class="swatches" id="quickChars"></div><div class="controls"><div><label for="power">Jump power <span id="powerVal"></span></label><input type="range" id="power" min="9" max="21" step="1"></div><div><label for="gravity">Gravity <span id="gravityVal"></span></label><input type="range" id="gravity" min="0.35" max="1.1" step="0.05"></div><div><label for="speed">Game speed <span id="speedVal"></span></label><input type="range" id="speed" min="2" max="8" step="0.5"></div><div><label for="points">Star points <span id="pointsVal"></span></label><input type="range" id="points" min="5" max="50" step="5"></div><div><label for="theme">World theme</label><select id="theme"><option>space</option><option>jungle</option><option>candy</option><option>ocean</option><option>sunset</option><option>snow</option><option>desert</option><option>forest</option><option>city</option><option>volcano</option></select></div><div><label for="character">Animal / hero</label><select id="character"><option>cat</option><option>dog</option><option>fox</option><option>frog</option><option>rabbit</option><option>dinosaur</option><option>penguin</option><option>robot</option><option>unicorn</option><option>bear</option><option>owl</option><option>panda</option><option>koala</option><option>raccoon</option><option>monkey</option><option>lion</option><option>tiger</option><option>elephant</option><option>turtle</option><option>dragon</option><option>alien</option><option>axolotl</option><option>shark</option><option>butterfly</option></select></div><div><label for="difficulty">Obstacle frequency</label><select id="difficulty"><option value="none">None</option><option value="few">Few</option><option value="medium">Medium</option><option value="many">Many</option><option value="tons">Lots</option></select></div><div><label for="obstacle">Obstacle</label><select id="obstacle"><option>spike</option><option>mushroom</option><option>rock</option><option>cactus</option><option>crystal</option><option>robot</option></select></div><div><label for="collectible">Collectible</label><select id="collectible"><option>star</option><option>heart</option><option>coin</option><option>gem</option><option>flower</option></select></div><div><label for="skyColor">Sky color</label><input type="color" id="skyColor"></div><div><label for="groundColor">Ground color</label><input type="color" id="groundColor"></div><div><label for="characterColor">Character color</label><input type="color" id="characterColor"></div></div><div class="tip">🔬 Science challenge: What happens to your jump when gravity increases? Predict, test, and explain!</div><p class="footer">Experiment: Predict → Change one setting → Test → Explain what happened. The game also works with no internet connection.</p></section></div></div><script>
 (()=>{'use strict';const $=id=>document.getElementById(id);const canvas=$('game'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,ground=325;const defaults={power:14,gravity:.65,speed:4,points:10,difficulty:'medium',theme:'space',character:'robot',obstacle:'spike',collectible:'star',skyColor:'#10254d',groundColor:'#365b8d',characterColor:'#86dfff'};let settings={...defaults},proposal=null,playing=false,over=false,score=0,frame=0,obstacles=[],stars=[],player={x:100,y:0,vy:0,w:42,h:46};const colors={space:['#10254d','#365b8d','#7fe1fc'],jungle:['#16483b','#3d7b54','#b1ed76'],candy:['#65376c','#d47baa','#ffd6fa'],ocean:['#10445d','#237d9b','#8de7f0'],sunset:['#ffad91','#9d5b9e','#ffdf9a'],snow:['#a6d8f2','#d9f0fa','#ffffff'],desert:['#f8c885','#c7824b','#ffe0a3'],forest:['#417c62','#315a43','#c6eeb3'],city:['#5b658d','#313b60','#f8d991'],volcano:['#4c2338','#6b2c30','#ff8b42']};const keys=['power','gravity','speed','points','difficulty','theme','character','obstacle','collectible','skyColor','groundColor','characterColor'];const colorKeys=['skyColor','groundColor','characterColor'];;function resetGame(){playing=false;over=false;score=0;frame=0;obstacles=[];stars=[];player.y=ground-player.h;player.vy=0;$('gameStatus').textContent='Ready to play.'}function jump(){if(!playing||over)return;if(player.y>=ground-player.h-1){player.vy=-settings.power}}function start(){resetGame();playing=true;$('gameStatus').textContent='Playing — press Space to jump!'}function sync(){for(const k of keys){$(k).value=settings[k];if($(k+'Val'))$(k+'Val').textContent=settings[k]}if(typeof markSelections==='function')markSelections()}function setSettings(next){const changedTheme=next.theme&&next.theme!==settings.theme;settings={...settings,...next};if(changedTheme){const c=colors[settings.theme];if(!('skyColor' in next))settings.skyColor=c[0];if(!('groundColor' in next))settings.groundColor=c[1]}sync()}for(const k of keys)$(k).addEventListener('input',()=>{settings[k]=['power','gravity','speed','points'].includes(k)?Number($(k).value):$(k).value;sync()});$('start').onclick=start;$('jump').onclick=jump;$('reset').onclick=()=>{setSettings(defaults);resetGame();$('assistantStatus').textContent='Original settings restored.'};document.addEventListener('keydown',e=>{if(e.code==='Space'&&!['TEXTAREA','INPUT','SELECT'].includes(document.activeElement.tagName)){e.preventDefault();jump()}});function rectHit(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
 const HERO_ICONS = {"cat": "🐱", "dog": "🐶", "fox": "🦊", "frog": "🐸", "rabbit": "🐰", "dinosaur": "🦖", "penguin": "🐧", "robot": "🤖", "unicorn": "🦄", "bear": "🐻", "owl": "🦉", "panda": "🐼", "koala": "🐨", "raccoon": "🦝", "monkey": "🐵", "lion": "🦁", "tiger": "🐯", "elephant": "🐘", "turtle": "🐢", "dragon": "🐲", "alien": "👽", "axolotl": "🦎", "shark": "🦈", "butterfly": "🦋"};
-function drawHero(){const x=player.x,y=player.y;const icon=HERO_ICONS[settings.character]||'🐱';const airborne=player.y<ground-player.h-3;const bounce=airborne?-.11:Math.sin(frame*.28)*.055;ctx.save();ctx.translate(x+player.w/2,y+player.h/2);ctx.rotate(bounce);ctx.fillStyle='#172a5444';ctx.beginPath();ctx.ellipse(0,24,22,5,0,0,Math.PI*2);ctx.fill();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='51px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.shadowColor='#ffffff';ctx.shadowBlur=4;ctx.fillText(icon,0,-3);ctx.shadowBlur=0;ctx.restore()}
+function drawHero(){const x=player.x,y=player.y;const icon=HERO_ICONS[settings.character]||'🐱';const airborne=player.y<ground-player.h-3;const bounce=airborne?-.11:Math.sin(frame*.28)*.055;ctx.save();ctx.translate(x+player.w/2,y+player.h/2);ctx.rotate(bounce);ctx.fillStyle='#172a5444';ctx.beginPath();ctx.ellipse(0,24,22,5,0,0,Math.PI*2);ctx.fill();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='51px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';ctx.shadowColor='#ffffff';ctx.shadowBlur=4;ctx.fillText(icon,0,-3);ctx.shadowBlur=0;
+// Optional kid-safe costume overlay. Never evaluates student input as code.
+const costume=window.jumpLabHeroCostume;
+if(costume && costume.base===settings.character){
+ ctx.save();
+ const accents={purple:'#a76bff',pink:'#ff79bc',blue:'#66c9ff',green:'#75df91',gold:'#ffce4c',rainbow:'#f9a4ec'};
+ const color=accents[costume.color]||'#a76bff';
+ ctx.strokeStyle=color;ctx.lineWidth=4;ctx.shadowColor=color;ctx.shadowBlur=7;
+ if(costume.effect==='sparkles'){ctx.fillStyle=color;ctx.font='18px system-ui';ctx.fillText('✦',-29,-19);ctx.fillText('✧',29,10)}
+ if(costume.effect==='glow'){ctx.beginPath();ctx.ellipse(0,-2,27,27,0,0,Math.PI*2);ctx.stroke()}
+ if(costume.accessory==='crown'){ctx.shadowBlur=0;ctx.font='27px system-ui';ctx.fillText('👑',0,-36)}
+ if(costume.accessory==='hat'){ctx.shadowBlur=0;ctx.font='26px system-ui';ctx.fillText('🎩',0,-36)}
+ if(costume.accessory==='wings'){ctx.shadowBlur=0;ctx.font='27px system-ui';ctx.fillText('🦋',-28,2);ctx.fillText('🦋',28,2)}
+ if(costume.accessory==='cape'){ctx.shadowBlur=0;ctx.fillStyle=color;ctx.fillRect(-18,18,36,7)}
+ if(costume.accessory==='jetpack'){ctx.shadowBlur=0;ctx.font='23px system-ui';ctx.fillText('🚀',-29,21)}
+ ctx.restore();
+}
+ctx.restore()}
 function drawObstacle(o){const x=o.x,y=ground-o.h;ctx.fillStyle='#ff767a';if(settings.obstacle==='spike'||settings.obstacle==='crystal'){ctx.beginPath();ctx.moveTo(x,ground);ctx.lineTo(x+o.w/2,y);ctx.lineTo(x+o.w,ground);ctx.fill()}else if(settings.obstacle==='mushroom'){ctx.fillStyle='#f7d9a8';ctx.fillRect(x+o.w*.38,y+12,o.w*.25,o.h-12);ellipse(x+o.w/2,y+14,o.w*.5,14,'#ff787e');ellipse(x+o.w*.35,y+9,3,3,'#fff')}else if(settings.obstacle==='rock'){ellipse(x+o.w/2,ground-13,o.w/2,16,'#8592a3')}else if(settings.obstacle==='cactus'){ctx.fillStyle='#4ab48a';ctx.fillRect(x+o.w*.35,y,o.w*.3,o.h);ctx.fillRect(x+2,y+15,o.w*.35,8);ctx.fillRect(x+o.w*.65,y+8,o.w*.3,8)}else{ctx.fillStyle='#e27a7a';ctx.fillRect(x,y,o.w,o.h);ctx.fillStyle='#fff';ctx.fillRect(x+6,y+9,5,5);ctx.fillRect(x+19,y+9,5,5)}}
 function drawCollectible(s){const x=s.x,y=s.y;ctx.save();ctx.fillStyle='#ffdc68';if(settings.collectible==='star'){ctx.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?8:16;ctx.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r)}ctx.closePath();ctx.fill()}else if(settings.collectible==='heart'){ctx.font='30px system-ui';ctx.textAlign='center';ctx.fillText('♥',x,y+10)}else if(settings.collectible==='coin'){ellipse(x,y,13,13,'#ffdc68');ellipse(x,y,8,8,'#f6ad42')}else if(settings.collectible==='gem'){ctx.beginPath();ctx.moveTo(x,y-16);ctx.lineTo(x+13,y);ctx.lineTo(x,y+16);ctx.lineTo(x-13,y);ctx.fill()}else{for(let i=0;i<6;i++){const a=i*Math.PI/3;ellipse(x+Math.cos(a)*9,y+Math.sin(a)*9,6,6,'#ffa1c6')}ellipse(x,y,6,6,'#ffdf63')}ctx.restore()}
 function cloud(x,y,z=1){ctx.fillStyle='#ffffffdd';ellipse(x,y,34*z,16*z,'#ffffffdd');ellipse(x-22*z,y+3*z,24*z,14*z,'#ffffffdd');ellipse(x+23*z,y+4*z,27*z,14*z,'#ffffffdd');ellipse(x+1*z,y-12*z,22*z,17*z,'#ffffffdd')}
@@ -41,7 +58,68 @@ for(const el of [heroGallery,worldGallery])el.addEventListener('click',()=>reque
 $('character').addEventListener('change',markSelections);$('theme').addEventListener('change',markSelections);
 $('apply').addEventListener('click',()=>requestAnimationFrame(markSelections));$('reset').addEventListener('click',()=>requestAnimationFrame(markSelections));
 markSelections();sync();resetGame();tick()})();
-</script><!-- Science Saturday micro:bit Bluetooth UART add-on: paste BEFORE </body> -->
+</script><!-- Science Saturday micro:bit Bluetooth UART add-on: paste BEFORE 
+<!-- Step 3: Safe Hero Creator; no Bluetooth, motion, or obstacle changes -->
+<style>
+#heroCreator{margin:13px 0 16px;padding:15px;border:3px solid #dfc9fc;border-radius:18px;background:#fbf7ff}
+#heroCreator summary{font-weight:900;font-size:18px;color:#5830a5;cursor:pointer}
+#heroCreator .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#heroCreator .hc-grid label{margin:7px 0 4px;font-size:13px}
+#heroCreator select,#heroCreator textarea{width:100%;font:inherit;border:2px solid #d0baf5;border-radius:10px;padding:8px;background:white;color:#382763}
+#heroCreator textarea{min-height:65px}
+#heroCreator .hc-preview{display:flex;align-items:center;gap:15px;background:#efe6ff;border-radius:13px;padding:12px;margin:10px 0}
+#heroCreator .hc-avatar{font-size:54px;line-height:1.2;min-width:68px;text-align:center}
+#heroCreator .hc-help{font-size:12px;color:#665584;line-height:1.5}
+#heroCreator .hc-feedback{font-size:13px;font-weight:700;color:#51328b;min-height:18px;margin-top:8px}
+@media(max-width:500px){#heroCreator .hc-grid{grid-template-columns:1fr}}
+</style>
+<script>
+(()=>{'use strict';
+const game=document.querySelector('.gamepanel');
+const gallery=game?.querySelector('#heroGallery');
+if(!gallery)return;
+const heroIcons={cat:'🐱',dog:'🐶',fox:'🦊',frog:'🐸',rabbit:'🐰',dinosaur:'🦖',penguin:'🐧',robot:'🤖',unicorn:'🦄',bear:'🐻',owl:'🦉',panda:'🐼',koala:'🐨',raccoon:'🦝',monkey:'🐵',lion:'🦁',tiger:'🐯',elephant:'🐘',turtle:'🐢',dragon:'🐲',alien:'👽',axolotl:'🦎',shark:'🦈',butterfly:'🦋'};
+const creator=document.createElement('details');creator.id='heroCreator';
+creator.innerHTML=`<summary>🎨 Create Your Own Hero <small style="font-size:12px">(optional)</small></summary>
+<p class="hc-help">Describe a friendly fantasy hero, or pick approved parts. Your words are interpreted locally; no new images, scripts, or web content are loaded.</p>
+<label for="hcPrompt">Describe your hero</label><textarea id="hcPrompt" maxlength="220" placeholder="A purple dragon with butterfly wings and magic sparkles"></textarea>
+<div class="buttons"><button type="button" id="hcInterpret">✨ Build from description</button></div>
+<div class="hc-grid">
+<div><label for="hcBase">Base hero</label><select id="hcBase"></select></div>
+<div><label for="hcColor">Magic color</label><select id="hcColor"><option value="purple">Purple</option><option value="pink">Pink</option><option value="blue">Blue</option><option value="green">Green</option><option value="gold">Gold</option><option value="rainbow">Rainbow</option></select></div>
+<div><label for="hcAccessory">Accessory</label><select id="hcAccessory"><option value="none">None</option><option value="wings">Butterfly wings</option><option value="crown">Crown</option><option value="hat">Top hat</option><option value="cape">Cape</option><option value="jetpack">Jetpack</option></select></div>
+<div><label for="hcEffect">Special effect</label><select id="hcEffect"><option value="none">None</option><option value="sparkles">Sparkles</option><option value="glow">Glow</option></select></div>
+</div>
+<div class="hc-preview"><div class="hc-avatar" id="hcAvatar">🐲</div><div><strong id="hcTitle">Your custom hero</strong><div class="hc-help" id="hcDetails">Preview your approved combination</div></div></div>
+<div class="buttons"><button type="button" id="hcApply">✓ Use this hero</button><button type="button" class="secondary" id="hcClear">Remove costume</button></div>
+<div class="hc-feedback" id="hcFeedback" role="status"></div>`;
+gallery.parentElement.insertBefore(creator,gallery);
+const $=id=>creator.querySelector('#'+id);
+for(const [key,emoji] of Object.entries(heroIcons)){const opt=document.createElement('option');opt.value=key;opt.textContent=emoji+' '+key;$('hcBase').append(opt)}
+$('hcBase').value='dragon';
+function current(){return {base:$('hcBase').value,color:$('hcColor').value,accessory:$('hcAccessory').value,effect:$('hcEffect').value}}
+function preview(){const c=current();$('hcAvatar').textContent=(c.accessory==='crown'?'👑':c.accessory==='hat'?'🎩':'')+heroIcons[c.base]+(c.accessory==='wings'?'🦋':c.accessory==='jetpack'?'🚀':'')+(c.effect==='sparkles'?'✨':'');$('hcTitle').textContent=c.color+' '+c.base;$('hcDetails').textContent=[c.accessory!=='none'?c.accessory:null,c.effect!=='none'?c.effect:null].filter(Boolean).join(' + ')||'No accessories';}
+for(const id of ['hcBase','hcColor','hcAccessory','hcEffect'])$(id).addEventListener('change',preview);
+$('hcInterpret').onclick=()=>{
+ const prompt=$('hcPrompt').value.toLowerCase();
+ if(!prompt.trim()){$('hcFeedback').textContent='Describe a character first.';return}
+ // Block unsuitable themes; the creator only maps descriptions to approved components.
+ if(/\b(?:gun|weapon|knife|blood|gore|kill|murder|nude|naked|sex|sexual|porn|drug|vape|cigarette|hate|racist)\b/i.test(prompt)){$('hcFeedback').textContent='Try a friendly, classroom-appropriate hero instead.';return}
+ const base=Object.keys(heroIcons).find(k=>new RegExp('\\b'+k+'\\b','i').test(prompt));
+ const color=['rainbow','purple','pink','blue','green','gold'].find(k=>prompt.includes(k));
+ const accessory=/wing|butterfly wing/.test(prompt)?'wings':/crown|princess|king|queen/.test(prompt)?'crown':/jetpack|rocket pack/.test(prompt)?'jetpack':/cape/.test(prompt)?'cape':/hat/.test(prompt)?'hat':null;
+ const effect=/sparkle|magic|glitter|star dust/.test(prompt)?'sparkles':/glow|shimmer|aura/.test(prompt)?'glow':null;
+ if(base)$('hcBase').value=base;if(color)$('hcColor').value=color;if(accessory)$('hcAccessory').value=accessory;if(effect)$('hcEffect').value=effect;
+ preview();$('hcFeedback').textContent=base||color||accessory||effect?'Here is what I understood. Adjust any part before applying.':'I could not recognize those details. Choose parts below or describe an animal, color, and accessory.';
+};
+$('hcApply').onclick=()=>{const c=current();window.jumpLabHeroCostume=c;const sel=document.getElementById('character');sel.value=c.base;sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));$('hcFeedback').textContent='Hero applied! Press Start to play.'};
+$('hcClear').onclick=()=>{window.jumpLabHeroCostume=null;$('hcFeedback').textContent='Costume removed. Your normal hero gallery still works.'};
+// Selecting a different gallery hero cancels the costume, so the quick-start gallery stays intuitive.
+gallery.addEventListener('click',()=>{window.jumpLabHeroCostume=null;$('hcFeedback').textContent='Gallery hero selected; custom costume cleared.'});
+preview();
+})();
+</script>
+</body> -->
 <style>
 #microbitControls{margin:12px 0;padding:12px;border:2px solid #8d70eb;border-radius:14px;background:#f5efff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 #microbitControls button{background:#6b48d6;color:white;border-color:#5630bd;box-shadow:0 3px 0 #442395}
@@ -163,6 +241,67 @@ $('apply').addEventListener('click',()=>requestAnimationFrame(render));
 $('reset').addEventListener('click',()=>requestAnimationFrame(render));
 explorer.addEventListener('toggle',()=>{if(explorer.open)render()});
 render();
+})();
+</script>
+
+<!-- Step 3: Safe Hero Creator; no Bluetooth, motion, or obstacle changes -->
+<style>
+#heroCreator{margin:13px 0 16px;padding:15px;border:3px solid #dfc9fc;border-radius:18px;background:#fbf7ff}
+#heroCreator summary{font-weight:900;font-size:18px;color:#5830a5;cursor:pointer}
+#heroCreator .hc-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#heroCreator .hc-grid label{margin:7px 0 4px;font-size:13px}
+#heroCreator select,#heroCreator textarea{width:100%;font:inherit;border:2px solid #d0baf5;border-radius:10px;padding:8px;background:white;color:#382763}
+#heroCreator textarea{min-height:65px}
+#heroCreator .hc-preview{display:flex;align-items:center;gap:15px;background:#efe6ff;border-radius:13px;padding:12px;margin:10px 0}
+#heroCreator .hc-avatar{font-size:54px;line-height:1.2;min-width:68px;text-align:center}
+#heroCreator .hc-help{font-size:12px;color:#665584;line-height:1.5}
+#heroCreator .hc-feedback{font-size:13px;font-weight:700;color:#51328b;min-height:18px;margin-top:8px}
+@media(max-width:500px){#heroCreator .hc-grid{grid-template-columns:1fr}}
+</style>
+<script>
+(()=>{'use strict';
+const game=document.querySelector('.gamepanel');
+const gallery=game?.querySelector('#heroGallery');
+if(!gallery)return;
+const heroIcons={cat:'🐱',dog:'🐶',fox:'🦊',frog:'🐸',rabbit:'🐰',dinosaur:'🦖',penguin:'🐧',robot:'🤖',unicorn:'🦄',bear:'🐻',owl:'🦉',panda:'🐼',koala:'🐨',raccoon:'🦝',monkey:'🐵',lion:'🦁',tiger:'🐯',elephant:'🐘',turtle:'🐢',dragon:'🐲',alien:'👽',axolotl:'🦎',shark:'🦈',butterfly:'🦋'};
+const creator=document.createElement('details');creator.id='heroCreator';
+creator.innerHTML=`<summary>🎨 Create Your Own Hero <small style="font-size:12px">(optional)</small></summary>
+<p class="hc-help">Describe a friendly fantasy hero, or pick approved parts. Your words are interpreted locally; no new images, scripts, or web content are loaded.</p>
+<label for="hcPrompt">Describe your hero</label><textarea id="hcPrompt" maxlength="220" placeholder="A purple dragon with butterfly wings and magic sparkles"></textarea>
+<div class="buttons"><button type="button" id="hcInterpret">✨ Build from description</button></div>
+<div class="hc-grid">
+<div><label for="hcBase">Base hero</label><select id="hcBase"></select></div>
+<div><label for="hcColor">Magic color</label><select id="hcColor"><option value="purple">Purple</option><option value="pink">Pink</option><option value="blue">Blue</option><option value="green">Green</option><option value="gold">Gold</option><option value="rainbow">Rainbow</option></select></div>
+<div><label for="hcAccessory">Accessory</label><select id="hcAccessory"><option value="none">None</option><option value="wings">Butterfly wings</option><option value="crown">Crown</option><option value="hat">Top hat</option><option value="cape">Cape</option><option value="jetpack">Jetpack</option></select></div>
+<div><label for="hcEffect">Special effect</label><select id="hcEffect"><option value="none">None</option><option value="sparkles">Sparkles</option><option value="glow">Glow</option></select></div>
+</div>
+<div class="hc-preview"><div class="hc-avatar" id="hcAvatar">🐲</div><div><strong id="hcTitle">Your custom hero</strong><div class="hc-help" id="hcDetails">Preview your approved combination</div></div></div>
+<div class="buttons"><button type="button" id="hcApply">✓ Use this hero</button><button type="button" class="secondary" id="hcClear">Remove costume</button></div>
+<div class="hc-feedback" id="hcFeedback" role="status"></div>`;
+gallery.parentElement.insertBefore(creator,gallery);
+const $=id=>creator.querySelector('#'+id);
+for(const [key,emoji] of Object.entries(heroIcons)){const opt=document.createElement('option');opt.value=key;opt.textContent=emoji+' '+key;$('hcBase').append(opt)}
+$('hcBase').value='dragon';
+function current(){return {base:$('hcBase').value,color:$('hcColor').value,accessory:$('hcAccessory').value,effect:$('hcEffect').value}}
+function preview(){const c=current();$('hcAvatar').textContent=(c.accessory==='crown'?'👑':c.accessory==='hat'?'🎩':'')+heroIcons[c.base]+(c.accessory==='wings'?'🦋':c.accessory==='jetpack'?'🚀':'')+(c.effect==='sparkles'?'✨':'');$('hcTitle').textContent=c.color+' '+c.base;$('hcDetails').textContent=[c.accessory!=='none'?c.accessory:null,c.effect!=='none'?c.effect:null].filter(Boolean).join(' + ')||'No accessories';}
+for(const id of ['hcBase','hcColor','hcAccessory','hcEffect'])$(id).addEventListener('change',preview);
+$('hcInterpret').onclick=()=>{
+ const prompt=$('hcPrompt').value.toLowerCase();
+ if(!prompt.trim()){$('hcFeedback').textContent='Describe a character first.';return}
+ // Block unsuitable themes; the creator only maps descriptions to approved components.
+ if(/\b(?:gun|weapon|knife|blood|gore|kill|murder|nude|naked|sex|sexual|porn|drug|vape|cigarette|hate|racist)\b/i.test(prompt)){$('hcFeedback').textContent='Try a friendly, classroom-appropriate hero instead.';return}
+ const base=Object.keys(heroIcons).find(k=>new RegExp('\\b'+k+'\\b','i').test(prompt));
+ const color=['rainbow','purple','pink','blue','green','gold'].find(k=>prompt.includes(k));
+ const accessory=/wing|butterfly wing/.test(prompt)?'wings':/crown|princess|king|queen/.test(prompt)?'crown':/jetpack|rocket pack/.test(prompt)?'jetpack':/cape/.test(prompt)?'cape':/hat/.test(prompt)?'hat':null;
+ const effect=/sparkle|magic|glitter|star dust/.test(prompt)?'sparkles':/glow|shimmer|aura/.test(prompt)?'glow':null;
+ if(base)$('hcBase').value=base;if(color)$('hcColor').value=color;if(accessory)$('hcAccessory').value=accessory;if(effect)$('hcEffect').value=effect;
+ preview();$('hcFeedback').textContent=base||color||accessory||effect?'Here is what I understood. Adjust any part before applying.':'I could not recognize those details. Choose parts below or describe an animal, color, and accessory.';
+};
+$('hcApply').onclick=()=>{const c=current();window.jumpLabHeroCostume=c;const sel=document.getElementById('character');sel.value=c.base;sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));$('hcFeedback').textContent='Hero applied! Press Start to play.'};
+$('hcClear').onclick=()=>{window.jumpLabHeroCostume=null;$('hcFeedback').textContent='Costume removed. Your normal hero gallery still works.'};
+// Selecting a different gallery hero cancels the costume, so the quick-start gallery stays intuitive.
+gallery.addEventListener('click',()=>{window.jumpLabHeroCostume=null;$('hcFeedback').textContent='Gallery hero selected; custom costume cleared.'});
+preview();
 })();
 </script>
 </body></html>
