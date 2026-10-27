@@ -106,7 +106,7 @@ async def generate_hero(request: Request):
             'Use a playful, polished, kid-friendly 2D platform-game art style.'
         )
         result = await client.images.generate(
-            model=os.environ.get('OPENAI_IMAGE_MODEL', 'gpt-image-1'),
+            model=os.environ.get('OPENAI_IMAGE_MODEL', 'gpt-image-2.5-flare'),
             prompt=instruction,
             size='1024x1024',
             quality='low',
