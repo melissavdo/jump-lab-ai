@@ -232,7 +232,7 @@ document.getElementById('disconnectMicrobit').onclick=()=>{if(device?.gatt?.conn
 #codeExplorer .ce-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 #codeExplorer .ce-actions button{font-size:12px;padding:8px 12px}
 #codeExplorer .ce-actions button[aria-pressed="true"]{background:#6733c4;color:white;border-color:#51259e}
-#codeExplorer pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#18233c;color:#eaf5ff;border-radius:12px;padding:14px;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:400px;overflow:auto}
+#codeExplorer .ce-changed{display:block;background:#ffe7a4;color:#3c2858;border-left:4px solid #f49a20;padding:1px 8px;margin:0 -8px;border-radius:4px;font-weight:850}#codeExplorer .ce-change-note{font-size:12px;font-weight:800;color:#825100;margin:7px 0}#codeExplorer pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#18233c;color:#eaf5ff;border-radius:12px;padding:14px;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:400px;overflow:auto}
 #codeExplorer .ce-explain{background:#e8f2ff;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55}
 #codeExplorer .ce-values{font-size:13px;font-weight:800;margin:10px 0}
 </style>
@@ -245,7 +245,7 @@ const explorer=document.createElement('details');
 explorer.id='codeExplorer';
 explorer.innerHTML=`<summary>🔍 See the Code Behind Your Game</summary>
 <p class="mini">Change your game settings or apply AI suggestions, then see what the code means!</p>
-<div class="ce-values" id="ceValues"></div>
+<div class="ce-values" id="ceValues"></div><div class="ce-change-note" id="ceChangeNote">Change one setting to highlight its code below.</div>
 <div class="ce-actions"><button type="button" id="cePython" aria-pressed="true">🐍 Beginner Python</button><button type="button" id="ceJS" aria-pressed="false">💻 Real JavaScript</button><button type="button" id="ceCopy" class="secondary">📋 Copy code</button></div>
 <pre id="ceCode" aria-label="Code example"></pre>
 <div class="ce-explain" id="ceExplain"></div>
@@ -253,6 +253,8 @@ explorer.innerHTML=`<summary>🔍 See the Code Behind Your Game</summary>
 target.append(explorer);
 const $=id=>document.getElementById(id);
 let language='python';
+let lastChanged=null;
+const fieldNames={gravity:'Gravity',power:'Jump power',speed:'Game speed',difficulty:'Obstacle frequency',skyColor:'Sky color',groundColor:'Ground color',characterColor:'Hero Aura'};
 const intervals={none:0,few:210,medium:105,many:72,tons:48};
 const getValues=()=>({gravity:Number($('gravity').value),power:Number($('power').value),speed:Number($('speed').value),difficulty:$('difficulty').value,skyColor:$('skyColor').value,groundColor:$('groundColor').value,characterColor:$('characterColor').value});
 function render(){
@@ -260,7 +262,24 @@ const v=getValues(),interval=intervals[v.difficulty]??105;
 $('ceValues').textContent=`Gravity: ${v.gravity}  ·  Jump power: ${v.power}  ·  Speed: ${v.speed}  ·  Obstacles: ${v.difficulty==='tons'?'Lots':v.difficulty[0].toUpperCase()+v.difficulty.slice(1)}  ·  Sky: ${v.skyColor}  ·  Ground: ${v.groundColor}  ·  Hero glow: ${v.characterColor}`;
 const python=`# PYTHON LEARNING EXAMPLE (not executed by the game)\ngravity = ${v.gravity}\njump_power = ${v.power}\ngame_speed = ${v.speed}\nobstacle_interval = ${interval}\nsky_color = "${v.skyColor}"\nground_color = "${v.groundColor}"\nhero_glow_color = "${v.characterColor}"\n\n# Draw the sky, ground, and a colored aura behind the hero.\n# Emoji and AI image pixels keep their original colors.\n\n# Each game frame:\nvertical_speed += gravity\nplayer_y += vertical_speed\n\n# When a jump is allowed:\nif player_is_on_ground and jump_requested:\n    vertical_speed = -jump_power\n\n# Create obstacles at regular intervals:\nif obstacle_interval > 0:\n    if frame % obstacle_interval == 0:\n        spawn_obstacle()\n\n# Move each obstacle to the left:\nfor obstacle in obstacles:\n    obstacle.x -= game_speed`;
 const js=`// REAL JAVASCRIPT LOGIC — excerpts from Jump Lab\n// Current settings (values displayed from the controls):\nsettings.gravity = ${v.gravity};\nsettings.power = ${v.power};\nsettings.speed = ${v.speed};\nsettings.difficulty = '${v.difficulty}';\nsettings.skyColor = '${v.skyColor}';\nsettings.groundColor = '${v.groundColor}';\nsettings.characterColor = '${v.characterColor}';\n\n// From scene():\n// The sky uses settings.skyColor as the gradient start.\n// The ground is filled with settings.groundColor.\n// From drawHero():\n// A glowing ellipse behind the hero uses settings.characterColor.\n\n// From jump():\nif (!playing || over) return;\nif (player.y >= ground - player.h - 1) {\n  player.vy = -settings.power;\n}\n\n// From tick():\nplayer.vy += settings.gravity;\nplayer.y += player.vy;\nconst obstacleInterval = {\n  none: 0, few: 210, medium: 105, many: 72, tons: 48\n}[settings.difficulty] ?? 105;\nif (obstacleInterval > 0 && frame % obstacleInterval === 0) {\n  obstacles.push({x: W+25, w: 30, h: 32+Math.random()*19});\n}\nfor (const o of obstacles) {\n  o.x -= settings.speed;\n}`;
-$('ceCode').textContent=language==='python'?python:js;
+const source=language==='python'?python:js;
+const patterns={
+  gravity:language==='python'?/^gravity = /:/^settings\.gravity = /,
+  power:language==='python'?/^jump_power = /:/^settings\.power = /,
+  speed:language==='python'?/^game_speed = /:/^settings\.speed = /,
+  difficulty:language==='python'?/^obstacle_interval = /:/^settings\.difficulty = /,
+  skyColor:language==='python'?/^sky_color = /:/^settings\.skyColor = /,
+  groundColor:language==='python'?/^ground_color = /:/^settings\.groundColor = /,
+  characterColor:language==='python'?/^hero_glow_color = /:/^settings\.characterColor = /
+};
+const code=$('ceCode');code.replaceChildren();
+source.split('\n').forEach((line,index)=>{
+  if(index)code.append(document.createTextNode('\n'));
+  if(lastChanged&&patterns[lastChanged]?.test(line)){
+    const highlight=document.createElement('span');highlight.className='ce-changed';highlight.textContent=line;code.append(highlight);
+  }else code.append(document.createTextNode(line));
+});
+$('ceChangeNote').textContent=lastChanged?'✨ Latest change: '+fieldNames[lastChanged]+' — highlighted below.':'Change one setting to highlight its code below.';
 $('ceExplain').textContent=interval===0?'🧠 A variable stores a value. Gravity pulls your hero down; jump power launches it upward. The obstacle condition is turned off because difficulty is None.':`🧠 Variables store game rules. An if statement makes a decision. The % operator checks whether a frame number is divisible by ${interval}; that controls when a new obstacle appears. Fewer frames between obstacles means more obstacles.`;
 $('cePython').setAttribute('aria-pressed',String(language==='python'));
 $('ceJS').setAttribute('aria-pressed',String(language==='js'));
@@ -269,9 +288,20 @@ $('cePython').onclick=()=>{language='python';render()};
 $('ceJS').onclick=()=>{language='js';render()};
 $('ceCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('ceCode').textContent);$('ceCopy').textContent='✓ Copied';setTimeout(()=>$('ceCopy').textContent='📋 Copy code',1300)}catch(e){$('ceCopy').textContent='Select code to copy'}};
 // Capture both slider input and AI apply changes; never modify existing listeners.
-document.addEventListener('input',e=>{if(['gravity','power','speed','difficulty','skyColor','groundColor','characterColor'].includes(e.target.id))render()});
-$('apply').addEventListener('click',()=>requestAnimationFrame(render));
-$('reset').addEventListener('click',()=>requestAnimationFrame(render));
+let previous=getValues();
+const tracked=Object.keys(fieldNames);
+function detectChange(){
+ const current=getValues();
+ const changed=tracked.filter(k=>current[k]!==previous[k]);
+ if(changed.length)lastChanged=changed[changed.length-1];
+ previous=current;
+ render();
+}
+// Listen for sliders, color inputs, dropdowns, AI-applied proposals and resets.
+document.addEventListener('input',e=>{if(tracked.includes(e.target.id))detectChange()});
+document.addEventListener('change',e=>{if(tracked.includes(e.target.id))detectChange()});
+$('apply').addEventListener('click',()=>requestAnimationFrame(detectChange));
+$('reset').addEventListener('click',()=>requestAnimationFrame(detectChange));
 explorer.addEventListener('toggle',()=>{if(explorer.open)render()});
 render();
 })();
