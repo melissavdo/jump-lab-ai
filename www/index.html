@@ -59,7 +59,7 @@ panel.innerHTML=`<summary>✨ Generate a REAL AI Hero (new!)</summary>
 <label for="aiHeroPrompt">Describe your dream character</label>
 <textarea id="aiHeroPrompt" maxlength="240" placeholder="A purple dragon with butterfly wings and golden boots, in a cute cartoon style"></textarea>
 <div class="buttons"><button type="button" id="aiHeroGenerate">✨ Generate AI artwork</button><button type="button" class="secondary" id="aiHeroRemove">Use normal character</button></div>
-<div class="aihero-result" id="aiHeroResult"><img id="aiHeroPreview" alt="Generated hero preview"><div><strong>Review your new hero</strong><p class="aihero-note">Only apply it if you like the result.</p><button type="button" id="aiHeroApply">✓ Use this AI hero</button></div></div>
+<div class="aihero-result" id="aiHeroResult"><img id="aiHeroPreview" alt="Generated hero preview"><div><strong>Review your new hero</strong><p class="aihero-note">Only apply it if you like the result.</p><button type="button" id="aiHeroApply">✓ Use this AI hero</button><button type="button" class="secondary" id="aiHeroDownload">⬇ Download PNG</button></div></div>
 <div id="aiHeroStatus" class="status" role="status">Your existing characters still work offline.</div>`;
 gallery.parentElement.insertBefore(panel,gallery);
 const $=id=>panel.querySelector('#'+id);
@@ -73,13 +73,34 @@ try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isA
 function activateHero(url,status){
  const image=new Image();image.onload=()=>{window.jumpLabGeneratedHero=image;window.jumpLabHeroCostume=null;$('aiHeroStatus').textContent=status||'Hero selected! Press Start to play.'};image.onerror=()=>{$('aiHeroStatus').textContent='Could not load that hero image.'};image.src=url;
 }
+function downloadHero(url,title){
+ // Reuse the existing image bytes locally. No moderation or image-generation API call.
+ const image=new Image();
+ image.onload=()=>{
+  try{
+   const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+   canvas.getContext('2d').drawImage(image,0,0);
+   canvas.toBlob(blob=>{
+    if(!blob){$('aiHeroStatus').textContent='Could not prepare the PNG download.';return}
+    const objectURL=URL.createObjectURL(blob);
+    const link=document.createElement('a');link.href=objectURL;
+    const filename=(title||'ai-hero').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,45)||'ai-hero';
+    link.download=filename+'.png';document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(objectURL),30000);
+    $('aiHeroStatus').textContent='Hero PNG downloaded! You can add approved images to GitHub.';
+   },'image/png');
+  }catch(e){$('aiHeroStatus').textContent='Could not download this image in this browser.'}
+ };
+ image.onerror=()=>{$('aiHeroStatus').textContent='Could not load the hero for download.'};
+ image.src=url;
+}
 function makeCard(hero,container,isMine){
  const card=document.createElement('div');card.className='aihero-library-card';
  const img=document.createElement('img');img.src=hero.image;img.alt=hero.title;img.loading='lazy';
  const title=document.createElement('span');title.textContent=hero.title;
  const use=document.createElement('button');use.type='button';use.textContent='Use hero';use.onclick=()=>activateHero(hero.image,'Selected '+hero.title+' — no AI request!');
  card.append(img,title,use);
- if(isMine){const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';remove.onclick=()=>{saved=saved.filter(h=>h.id!==hero.id);persist();renderMine()};card.append(remove)}
+ if(isMine){const download=document.createElement('button');download.type='button';download.className='secondary';download.textContent='⬇ PNG';download.onclick=()=>downloadHero(hero.image,hero.title);card.append(download);const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';remove.onclick=()=>{saved=saved.filter(h=>h.id!==hero.id);persist();renderMine()};card.append(remove)}
  container.append(card);
 }
 function renderMine(){const container=$('myAIHeroGrid');container.replaceChildren();if(!saved.length){const p=document.createElement('p');p.className='aihero-note';p.textContent='Your generated heroes will appear here after you select Use this AI hero.';container.append(p)}else saved.forEach(h=>makeCard(h,container,true))}
@@ -110,6 +131,7 @@ $('aiHeroApply').onclick=()=>{if(!pending)return;window.jumpLabGeneratedHero=pen
  if(!existing){const title=($('aiHeroPrompt').value.trim()||'My AI Hero').slice(0,45);saved.unshift({id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),title,image:url});saved=saved.slice(0,8);persist();renderMine()}
  $('aiHeroStatus').textContent='AI hero applied and added to My AI Heroes! Press Start to play.';
 };
+$('aiHeroDownload').onclick=()=>{if(pending)downloadHero(pending.src,$('aiHeroPrompt').value.trim()||'my-ai-hero')};
 $('aiHeroRemove').onclick=()=>{window.jumpLabGeneratedHero=null;$('aiHeroStatus').textContent='AI hero removed.'};
 gallery.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
 const existingApply=document.getElementById('hcApply');if(existingApply)existingApply.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
