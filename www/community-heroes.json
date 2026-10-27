@@ -1,6 +1,7 @@
 {
   "heroes": [
     {"title": "Pink Strawberry Dinosaur", "image": "community-heroes/a-tiny-pink-dinosaur-with-strawberry-shaped-s.png"},
-    {"title": "Astronaut Cat", "image": "community-heroes/a-fluffy-orange-cat-astronaut-wearing-a-blue-.png"}
+    {"title": "Astronaut Cat", "image": "community-heroes/a-fluffy-orange-cat-astronaut-wearing-a-blue-.png"},
+    {"title": "Taylor Swift", "image": "community-heroes/taylor-swift.png"}
   ]
 }
