@@ -64,6 +64,34 @@ panel.innerHTML=`<summary>✨ Generate a REAL AI Hero (new!)</summary>
 gallery.parentElement.insertBefore(panel,gallery);
 const $=id=>panel.querySelector('#'+id);
 let pending=null;
+const galleryUI=document.createElement('section');galleryUI.id='aiHeroLibraries';
+galleryUI.innerHTML=`<h3>🎒 My AI Heroes <small>Saved on this computer</small></h3><div id="myAIHeroGrid" class="aihero-grid"></div><p class="aihero-note">These heroes stay in this browser when possible. Other computers cannot see them.</p><h3>🌟 Community Heroes <small>Instructor-curated · free to use</small></h3><div id="communityHeroGrid" class="aihero-grid"></div><p class="aihero-note">Community heroes are added by the instructor through GitHub. Choosing one never generates a new image.</p>`;
+panel.append(galleryUI);
+const STORAGE_KEY='jumpLabMyAIHeroesV1';
+let saved=[];
+try{const value=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');if(Array.isArray(value))saved=value.filter(h=>h&&typeof h.image==='string'&&h.image.startsWith('data:image/')&&typeof h.title==='string').slice(0,8)}catch(e){}
+function activateHero(url,status){
+ const image=new Image();image.onload=()=>{window.jumpLabGeneratedHero=image;window.jumpLabHeroCostume=null;$('aiHeroStatus').textContent=status||'Hero selected! Press Start to play.'};image.onerror=()=>{$('aiHeroStatus').textContent='Could not load that hero image.'};image.src=url;
+}
+function makeCard(hero,container,isMine){
+ const card=document.createElement('div');card.className='aihero-library-card';
+ const img=document.createElement('img');img.src=hero.image;img.alt=hero.title;img.loading='lazy';
+ const title=document.createElement('span');title.textContent=hero.title;
+ const use=document.createElement('button');use.type='button';use.textContent='Use hero';use.onclick=()=>activateHero(hero.image,'Selected '+hero.title+' — no AI request!');
+ card.append(img,title,use);
+ if(isMine){const remove=document.createElement('button');remove.type='button';remove.className='secondary';remove.textContent='Remove';remove.onclick=()=>{saved=saved.filter(h=>h.id!==hero.id);persist();renderMine()};card.append(remove)}
+ container.append(card);
+}
+function renderMine(){const container=$('myAIHeroGrid');container.replaceChildren();if(!saved.length){const p=document.createElement('p');p.className='aihero-note';p.textContent='Your generated heroes will appear here after you select Use this AI hero.';container.append(p)}else saved.forEach(h=>makeCard(h,container,true))}
+function persist(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(saved));return true}catch(e){$('aiHeroStatus').textContent='Hero is usable now, but browser storage is full. It may not survive a refresh.';return false}}
+renderMine();
+async function loadCommunity(){const container=$('communityHeroGrid');try{
+ const response=await fetch('/game/community-heroes.json',{cache:'no-store'});if(!response.ok)throw Error('not available');const data=await response.json();
+ const heroes=Array.isArray(data.heroes)?data.heroes:[];let count=0;
+ for(const h of heroes){if(!h||typeof h.title!=='string'||typeof h.image!=='string'||!/^community-heroes\/[a-zA-Z0-9_./-]+\.(png|webp|jpg|jpeg)$/i.test(h.image)||h.image.includes('..'))continue;makeCard({title:h.title.slice(0,50),image:'/game/'+h.image},container,false);count++}
+ if(!count)container.textContent='Coming soon! Your instructor can add approved heroes to GitHub.';
+ }catch(e){container.textContent='Community gallery is not set up yet. Your own heroes still work.'}}
+loadCommunity();
 $('aiHeroGenerate').onclick=async()=>{
  const prompt=$('aiHeroPrompt').value.trim();if(prompt.length<5){$('aiHeroStatus').textContent='Describe your hero first.';return}
  const button=$('aiHeroGenerate');button.disabled=true;$('aiHeroStatus').textContent='Generating your original hero… this may take a minute.';
@@ -77,13 +105,27 @@ $('aiHeroGenerate').onclick=async()=>{
  }catch(err){$('aiHeroStatus').textContent=err.message+' Your normal heroes still work.'}
  finally{button.disabled=false}
 };
-$('aiHeroApply').onclick=()=>{if(!pending)return;window.jumpLabGeneratedHero=pending;window.jumpLabHeroCostume=null;$('aiHeroStatus').textContent='AI hero applied! Press Start to play.'};
+$('aiHeroApply').onclick=()=>{if(!pending)return;window.jumpLabGeneratedHero=pending;window.jumpLabHeroCostume=null;
+ const url=pending.src;const existing=saved.find(h=>h.image===url);
+ if(!existing){const title=($('aiHeroPrompt').value.trim()||'My AI Hero').slice(0,45);saved.unshift({id:String(Date.now())+'-'+Math.random().toString(36).slice(2,8),title,image:url});saved=saved.slice(0,8);persist();renderMine()}
+ $('aiHeroStatus').textContent='AI hero applied and added to My AI Heroes! Press Start to play.';
+};
 $('aiHeroRemove').onclick=()=>{window.jumpLabGeneratedHero=null;$('aiHeroStatus').textContent='AI hero removed.'};
 gallery.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
 const existingApply=document.getElementById('hcApply');if(existingApply)existingApply.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
 })();
 </script>
 
+<style>
+#aiHeroLibraries{margin-top:17px;border-top:2px solid #d8cff5;padding-top:10px}
+#aiHeroLibraries h3{font-size:16px;color:#4b319e;margin:15px 0 9px}
+#aiHeroLibraries h3 small{font-size:11px;font-weight:600;color:#777099}
+.aihero-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px}
+.aihero-library-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px;border:2px solid #d8cff5;border-radius:13px;background:white;min-width:0}
+.aihero-library-card img{width:92px!important;height:92px!important;object-fit:contain}
+.aihero-library-card span{font-size:11px;font-weight:800;overflow-wrap:anywhere;text-align:center}
+.aihero-library-card button{font-size:11px;padding:6px 9px;width:100%}
+</style>
 <style>
 #microbitControls{margin:12px 0;padding:12px;border:2px solid #8d70eb;border-radius:14px;background:#f5efff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 #microbitControls button{background:#6b48d6;color:white;border-color:#5630bd;box-shadow:0 3px 0 #442395}
