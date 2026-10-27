@@ -119,8 +119,27 @@ async def generate_hero(request: Request):
             return JSONResponse({'error': 'Image service returned no artwork.'}, status_code=502)
         # No student prompt or generated image is stored on this server.
         return JSONResponse({'image': 'data:image/png;base64,' + raw})
-    except Exception:
-        return JSONResponse({'error': 'Image generation failed. Try again or choose a gallery hero.'}, status_code=502)
+    except Exception as exc:
+        # Return only a safe error category; never expose keys, prompts, or raw provider responses.
+        import logging
+        from openai import APIStatusError, APITimeoutError, APIConnectionError
+        logging.getLogger('jump_lab').exception('Hero image generation failed')
+        if isinstance(exc, APIStatusError):
+            code = getattr(exc, 'status_code', 502)
+            if code == 401:
+                message = 'OpenAI authentication failed. Check the server API key.'
+            elif code == 403:
+                message = 'OpenAI denied image-model access. Check project verification and permissions.'
+            elif code == 429:
+                message = 'OpenAI rate limit or billing quota reached. Check API billing and usage limits.'
+            elif code == 400:
+                message = 'OpenAI rejected the image request. Check image model and supported parameters.'
+            else:
+                message = 'OpenAI image service returned HTTP ' + str(code) + '. Check Posit logs.'
+            return JSONResponse({'error': message, 'provider_status': code}, status_code=502)
+        if isinstance(exc, (APITimeoutError, APIConnectionError)):
+            return JSONResponse({'error': 'Cannot reach OpenAI image service or request timed out. Check Posit logs.'}, status_code=502)
+        return JSONResponse({'error': 'Server error during image generation (' + type(exc).__name__ + '). Check Posit logs.'}, status_code=502)
 
 # Shiny for Python ASGI app, with a lightweight API route.
 from starlette.routing import Route
