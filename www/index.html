@@ -41,7 +41,7 @@ for(const el of [heroGallery,worldGallery])el.addEventListener('click',()=>reque
 $('character').addEventListener('change',markSelections);$('theme').addEventListener('change',markSelections);
 $('apply').addEventListener('click',()=>requestAnimationFrame(markSelections));$('reset').addEventListener('click',()=>requestAnimationFrame(markSelections));
 markSelections();sync();resetGame();tick()})();
-</script><!-- Science Saturday micro:bit Bluetooth UART add-on: paste BEFORE 
+</script>
 <style>
 #aiHeroCreator{margin:13px 0 16px;padding:16px;border:3px solid #9c8cf3;border-radius:18px;background:#f4f1ff}
 #aiHeroCreator summary{font-size:19px;font-weight:900;color:#4b319e;cursor:pointer}
@@ -83,7 +83,7 @@ gallery.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
 const existingApply=document.getElementById('hcApply');if(existingApply)existingApply.addEventListener('click',()=>{window.jumpLabGeneratedHero=null});
 })();
 </script>
-</body> -->
+
 <style>
 #microbitControls{margin:12px 0;padding:12px;border:2px solid #8d70eb;border-radius:14px;background:#f5efff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 #microbitControls button{background:#6b48d6;color:white;border-color:#5630bd;box-shadow:0 3px 0 #442395}
