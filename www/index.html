@@ -216,7 +216,6 @@ lab.innerHTML=`<summary>✨ AI Obstacle Lab — Create It · Code It · Test It<
 <div class="ol-preview"><img id="olImage" alt="AI obstacle preview" hidden><div><button type="button" id="olUseImage" disabled>✓ Approve artwork</button> <button type="button" class="secondary" id="olDownload" disabled>⬇ PNG</button><p class="mini">Artwork is optional. Rules work without an AI image.</p></div></div>
 <div class="buttons"><button type="button" id="olApply">▶ Apply obstacle & test</button><button type="button" class="secondary" id="olReset">↺ Use classic obstacles</button></div>
 <p class="status" id="olStatus" role="status">Ready to invent! Choose rules or describe an obstacle.</p>
-<label for="olPrediction">🔬 Predict: Will your obstacle make the game easier or harder? Why?</label><textarea id="olPrediction" rows="2" style="min-height:55px" placeholder="I predict… because…"></textarea>
 <p class="mini">💻 Explore the code for your obstacle in <strong>See the Code Behind Your Game</strong>.</p>
 <h3 style="font-size:15px;color:#5730a0">🎒 My AI Obstacles</h3><div id="olLibrary" class="ol-library"></div><p class="mini">Saved in this browser when storage permits; approved artwork can be downloaded and shared.</p>`;
 const heroGallery=document.getElementById('heroGallery');if(heroGallery)heroGallery.parentElement.insertBefore(lab,heroGallery);else host.append(lab);
