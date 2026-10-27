@@ -114,4 +114,55 @@ document.getElementById('disconnectMicrobit').onclick=()=>{if(device?.gatt?.conn
 })();
 </script>
 
+<!-- Code Explorer: educational display only; no changes to game or Bluetooth logic -->
+<style>
+#codeExplorer{margin-top:18px;border:3px solid #b9d8f9;border-radius:18px;background:#f6fbff;padding:15px;color:#263969}
+#codeExplorer summary{cursor:pointer;font-weight:900;font-size:19px;color:#2762a9}
+#codeExplorer .ce-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+#codeExplorer .ce-actions button{font-size:12px;padding:8px 12px}
+#codeExplorer .ce-actions button[aria-pressed="true"]{background:#6733c4;color:white;border-color:#51259e}
+#codeExplorer pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#18233c;color:#eaf5ff;border-radius:12px;padding:14px;font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;max-height:400px;overflow:auto}
+#codeExplorer .ce-explain{background:#e8f2ff;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.55}
+#codeExplorer .ce-values{font-size:13px;font-weight:800;margin:10px 0}
+</style>
+<script>
+(()=>{
+'use strict';
+const target=document.querySelector('.designer')||document.querySelector('.layout > section:last-child');
+if(!target)return;
+const explorer=document.createElement('details');
+explorer.id='codeExplorer';
+explorer.innerHTML=`<summary>🔍 See the Code Behind Your Game</summary>
+<p class="mini">Change your game settings or apply AI suggestions, then see what the code means!</p>
+<div class="ce-values" id="ceValues"></div>
+<div class="ce-actions"><button type="button" id="cePython" aria-pressed="true">🐍 Beginner Python</button><button type="button" id="ceJS" aria-pressed="false">💻 Real JavaScript</button><button type="button" id="ceCopy" class="secondary">📋 Copy code</button></div>
+<pre id="ceCode" aria-label="Code example"></pre>
+<div class="ce-explain" id="ceExplain"></div>
+<p class="mini">Python is a teaching example, not the code running this browser game. JavaScript shows excerpts from the actual game logic with your current values.</p>`;
+target.append(explorer);
+const $=id=>document.getElementById(id);
+let language='python';
+const intervals={none:0,few:210,medium:105,many:72,tons:48};
+const getValues=()=>({gravity:Number($('gravity').value),power:Number($('power').value),speed:Number($('speed').value),difficulty:$('difficulty').value});
+function render(){
+const v=getValues(),interval=intervals[v.difficulty]??105;
+$('ceValues').textContent=`Gravity: ${v.gravity}  ·  Jump power: ${v.power}  ·  Speed: ${v.speed}  ·  Obstacles: ${v.difficulty==='tons'?'Lots':v.difficulty[0].toUpperCase()+v.difficulty.slice(1)}`;
+const python=`# PYTHON LEARNING EXAMPLE (not executed by the game)\ngravity = ${v.gravity}\njump_power = ${v.power}\ngame_speed = ${v.speed}\nobstacle_interval = ${interval}\n\n# Each game frame:\nvertical_speed += gravity\nplayer_y += vertical_speed\n\n# When a jump is allowed:\nif player_is_on_ground and jump_requested:\n    vertical_speed = -jump_power\n\n# Create obstacles at regular intervals:\nif obstacle_interval > 0:\n    if frame % obstacle_interval == 0:\n        spawn_obstacle()\n\n# Move each obstacle to the left:\nfor obstacle in obstacles:\n    obstacle.x -= game_speed`;
+const js=`// REAL JAVASCRIPT LOGIC — excerpts from Jump Lab\n// Current settings (values displayed from the controls):\nsettings.gravity = ${v.gravity};\nsettings.power = ${v.power};\nsettings.speed = ${v.speed};\nsettings.difficulty = '${v.difficulty}';\n\n// From jump():\nif (!playing || over) return;\nif (player.y >= ground - player.h - 1) {\n  player.vy = -settings.power;\n}\n\n// From tick():\nplayer.vy += settings.gravity;\nplayer.y += player.vy;\nconst obstacleInterval = {\n  none: 0, few: 210, medium: 105, many: 72, tons: 48\n}[settings.difficulty] ?? 105;\nif (obstacleInterval > 0 && frame % obstacleInterval === 0) {\n  obstacles.push({x: W+25, w: 30, h: 32+Math.random()*19});\n}\nfor (const o of obstacles) {\n  o.x -= settings.speed;\n}`;
+$('ceCode').textContent=language==='python'?python:js;
+$('ceExplain').textContent=interval===0?'🧠 A variable stores a value. Gravity pulls your hero down; jump power launches it upward. The obstacle condition is turned off because difficulty is None.':`🧠 Variables store game rules. An if statement makes a decision. The % operator checks whether a frame number is divisible by ${interval}; that controls when a new obstacle appears. Fewer frames between obstacles means more obstacles.`;
+$('cePython').setAttribute('aria-pressed',String(language==='python'));
+$('ceJS').setAttribute('aria-pressed',String(language==='js'));
+}
+$('cePython').onclick=()=>{language='python';render()};
+$('ceJS').onclick=()=>{language='js';render()};
+$('ceCopy').onclick=async()=>{try{await navigator.clipboard.writeText($('ceCode').textContent);$('ceCopy').textContent='✓ Copied';setTimeout(()=>$('ceCopy').textContent='📋 Copy code',1300)}catch(e){$('ceCopy').textContent='Select code to copy'}};
+// Capture both slider input and AI apply changes; never modify existing listeners.
+document.addEventListener('input',e=>{if(['gravity','power','speed','difficulty'].includes(e.target.id))render()});
+$('apply').addEventListener('click',()=>requestAnimationFrame(render));
+$('reset').addEventListener('click',()=>requestAnimationFrame(render));
+explorer.addEventListener('toggle',()=>{if(explorer.open)render()});
+render();
+})();
+</script>
 </body></html>
