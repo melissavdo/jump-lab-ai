@@ -271,7 +271,7 @@ lab.innerHTML=`<summary>✨ Obstacle Lab — Create It · Code It · Test It</su
 <div class="buttons"><button type="button" id="olApply">▶ Apply obstacle & test</button><button type="button" class="secondary" id="olReset">↺ Reset obstacle behavior</button></div>
 <p class="status" id="olStatus" role="status">Choose an obstacle, customize its behavior, and test!</p>
 <p class="mini">💻 Explore the code for your obstacle in <strong>See the Code Behind Your Game</strong>.</p>
-<h3 style="font-size:15px;color:#5730a0">🎒 My AI Obstacles</h3><div id="olLibrary" class="ol-library"></div><p class="mini">Saved in this browser when storage permits; approved artwork can be downloaded and shared.</p>`;
+<h3 style="font-size:15px;color:#5730a0">🎒 My AI Obstacles</h3><div id="olLibrary" class="ol-library"></div><p class="mini">Saved in this browser when storage permits; approved artwork can be downloaded and shared.</p><h3 style="font-size:15px;color:#5730a0;margin-top:18px">🌟 Community Obstacles <small style="font-size:11px;font-weight:600;color:#777099">Instructor-approved · Free to use</small></h3><div id="olCommunityGrid" class="ol-community-grid"></div><p class="mini">Select an obstacle to customize its movement and size. No AI generation needed.</p>`;
 const heroGallery=document.getElementById('heroGallery');if(heroGallery)heroGallery.parentElement.insertBefore(lab,heroGallery);else host.append(lab);
 const $=id=>lab.querySelector('#'+id);let pending=null,approved=null,source='classic';
 const classicNames=['spike','mushroom','rock','cactus','crystal','robot'];
@@ -296,7 +296,55 @@ function renderSaved(){const box=$('olLibrary');box.replaceChildren();if(!saved.
 function saveApproved(){if(!approved)return;const title=$('olPrompt').value.trim().slice(0,45)||'My obstacle';saved.unshift({title,image:approved.src,rules:values()});saved=saved.slice(0,5);try{localStorage.setItem(storeKey,JSON.stringify(saved))}catch(e){$('olStatus').textContent='Obstacle applied; browser storage is full, so it may not remain saved.'}renderSaved()}
 $('olGenerate').onclick=async()=>{selectSource('ai');const prompt=$('olPrompt').value.trim();if(prompt.length<5){$('olStatus').textContent='Describe an obstacle first.';return}interpret(prompt);const btn=$('olGenerate');btn.disabled=true;$('olStatus').textContent='Generating artwork… this may take a minute.';pending=null;try{const response=await fetch('/api/generate-hero',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'A single original kid-friendly VIDEO GAME OBSTACLE sprite, NOT a hero: '+prompt+'. Centered isolated 2D platformer object, bold clean outline, transparent background, no text, no scenery, no shadow.'})});const data=await response.json();if(!response.ok)throw Error(data.error||'Generation failed');const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=data.image});pending=img;$('olImage').src=data.image;$('olImage').hidden=false;$('olUseImage').disabled=false;$('olDownload').disabled=false;$('olStatus').textContent='Artwork ready. Approve it to use it in your game.'}catch(e){$('olStatus').textContent='Artwork unavailable: '+e.message+'. You can still use movement rules.'}finally{btn.disabled=false}};
 $('olUseImage').onclick=()=>{if(!pending)return;selectSource('ai');approved=pending;saveApproved();$('olStatus').textContent='Artwork approved and saved. Press Apply obstacle & test.'};
-$('olDownload').onclick=()=>{if(!pending)return;const a=document.createElement('a');a.href=pending.src;a.download='jump-lab-obstacle.png';document.body.append(a);a.click();a.remove()};
+$('olDownload').onclick=()=>{const image=pending||approved;if(!image)return;const a=document.createElement('a');a.href=image.src;a.download='jump-lab-obstacle.png';document.body.append(a);a.click();a.remove()};
+
+ async function loadCommunityObstacles(){
+   const container=$('olCommunityGrid');
+   container.textContent='Loading community obstacles…';
+   try{
+     const response=await fetch('/game/community-obstacles.json',{cache:'no-store'});
+     if(!response.ok)throw new Error('Community obstacles are not published yet.');
+     const data=await response.json();
+     const entries=Array.isArray(data.obstacles)?data.obstacles:[];
+     container.replaceChildren();
+     let count=0;
+     for(const item of entries){
+       if(!item||typeof item.title!=='string'||typeof item.image!=='string')continue;
+       if(!/^community-obstacles\/[a-zA-Z0-9_./-]+\.(?:png|webp|jpg|jpeg)$/i.test(item.image)||item.image.includes('..'))continue;
+       const title=item.title.trim().slice(0,55);
+       if(!title)continue;
+       const url='/game/'+item.image;
+       const card=document.createElement('div');card.className='ol-community-card';
+       const img=document.createElement('img');img.src=url;img.alt=title;img.loading='lazy';
+       const caption=document.createElement('span');caption.textContent=title;
+       const use=document.createElement('button');use.type='button';use.textContent='Use obstacle';
+       use.onclick=()=>{
+         const selected=new Image();
+         use.disabled=true;$('olStatus').textContent='Loading '+title+'…';
+         selected.onload=()=>{
+           approved=selected;pending=null;selectSource('ai');
+           $('olImage').src=url;$('olImage').hidden=false;
+           $('olUseImage').disabled=true;$('olDownload').disabled=false;
+           $('olPrompt').value=title;
+           const validBehaviors=['stationary','bounce','float','zigzag','chase'];
+           if(validBehaviors.includes(item.behavior))$('olBehavior').value=item.behavior;
+           if(Number.isFinite(Number(item.size)))$('olSize').value=String(Math.min(200,Math.max(50,Math.round(Number(item.size)/10)*10)));
+           if(Number.isFinite(Number(item.motion)))$('olSpeed').value=String(Math.min(2,Math.max(.5,Math.round(Number(item.motion)*4)/4)));
+           window.jumpLabObstacleChangedField='obstacle';code();apply();
+           $('olStatus').textContent='Community obstacle “'+title+'” applied! Change movement or size, then Apply again to test.';
+           use.disabled=false;
+         };
+         selected.onerror=()=>{$('olStatus').textContent='Could not load '+title+'. Check the image filename in community-obstacles.json.';use.disabled=false;};
+         selected.src=url;
+       };
+       const download=document.createElement('button');download.type='button';download.className='secondary';download.textContent='⬇ PNG';
+       download.onclick=()=>{const a=document.createElement('a');a.href=url;a.download=item.image.split('/').pop();document.body.append(a);a.click();a.remove();};
+       card.append(img,caption,use,download);container.append(card);count++;
+     }
+     if(!count)container.textContent='No community obstacles yet. Add approved PNGs and entries to community-obstacles.json.';
+   }catch(err){container.textContent='Community gallery is not set up yet. Classic and My AI Obstacles still work.';}
+ }
+ loadCommunityObstacles();
 renderSaved();window.jumpLabObstacleChangedField=null;code();
 })();
 </script>
@@ -522,4 +570,10 @@ render();
 @media(max-width:560px){.controls{grid-template-columns:1fr;gap:10px}.controls>div,.controls>div:nth-child(-n+4){padding:13px 14px}.controls>div label{margin-bottom:8px}}
 
 </style>
-</body></html>
+<style>
+#obstacleLab .ol-community-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin:10px 0}
+#obstacleLab .ol-community-card{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px;border:2px solid #d8cff5;border-radius:14px;background:white;min-width:0}
+#obstacleLab .ol-community-card img{width:94px;height:94px;object-fit:contain;border:0;background:transparent}
+#obstacleLab .ol-community-card span{font-size:12px;font-weight:800;text-align:center;overflow-wrap:anywhere}
+#obstacleLab .ol-community-card button{width:100%;font-size:11px;padding:7px 5px}
+</style></body></html>
