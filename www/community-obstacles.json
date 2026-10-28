@@ -1,6 +1,5 @@
 {
   "obstacles": [
-    {"title": "Purple Slime", "image": "community-obstacles/purple-slime.png"},
-    {"title": "Robot Monster", "image": "community-obstacles/robot-monster.png"}
+    {"title": "Purple Slime", "image": "community-obstacles/purple-slime.png"}
   ]
 }
